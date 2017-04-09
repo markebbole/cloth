@@ -13,9 +13,10 @@ GLPanel::GLPanel(QWidget *parent) :
     cont_ = NULL;
     c_.setDefault3D();
     lightPos_[0] = 1.;
-    lightPos_[1] = .5;
-    lightPos_[2] = .5;
+    lightPos_[1] = 0.;
+    lightPos_[2] = 0.;
     lightPos_[3] = 0.;
+    rot = 0.;
 }
 
 void GLPanel::setController(Controller *cont)
@@ -53,6 +54,7 @@ void GLPanel::resizeGL(int w, int h)
 void GLPanel::paintGL()
 {
     assert(cont_);
+    rot += .01;
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3f (0.0, 0.0, 0.0);
@@ -61,24 +63,28 @@ void GLPanel::paintGL()
     c_.applyProjection();
 
     Vector3d eye(0,0,0);
-    double scale = 1.0;
+    /*double scale = 1.0;
     cont_->getCameraInfo(cameraView_, eye, scale);
 
     eye *= scale;
 
     double dz = exp(scale_);
 
-    eye[2] = dz;
-    c_.setEye(eye);
-    eye[2] -= 1.0;
+    eye[2] = dz;*/
+    //c_.setEye(eye);
+    //eye[2] -= 5.0;
     c_.setCenter(eye);
+    eye[2] = 5.;
+    Vector3d axis(0., rot, 0.);
+    eye = VectorMath::rotationMatrix(axis) * eye;
+    c_.setEye(eye);
     Vector3d up(0,1,0);
     c_.setUp(up);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     c_.applyLookAt();
-    glScaled(scale,scale,scale);
+    //glScaled(scale,scale,scale);
 
     GLfloat lightColor0[] = {1.f, 1.f, 1.f, 1.0f};
     GLfloat ambientColor0[] = {0.2f, 0.2f, 0.2f, 1.0f};

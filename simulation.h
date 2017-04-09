@@ -12,6 +12,8 @@
 
 class RigidBodyTemplate;
 class RigidBodyInstance;
+class ClothTemplate;
+class ClothInstance;
 
 typedef Eigen::Triplet<double> Tr;
 
@@ -48,6 +50,9 @@ private:
 
     std::vector<RigidBodyTemplate *> templates_;
     std::vector<RigidBodyInstance *> bodies_;
+
+    std::vector<ClothTemplate *> cloth_templates_;
+    std::vector<ClothInstance *> cloths_;
 };
 
 #endif // SIMULATION_H

@@ -6,6 +6,8 @@
 #include <QDebug>
 #include "rigidbodytemplate.h"
 #include "rigidbodyinstance.h"
+#include "clothtemplate.h"
+#include "clothinstance.h"
 #include "vectormath.h"
 #include <Eigen/Dense>
 #include <set>
@@ -56,17 +58,40 @@ void Simulation::clearScene()
     templates_.clear();
     bodies_.clear();
 
-    double testRadius = 1.;
-    RigidBodyTemplate *testTemplate = new RigidBodyTemplate(string("resources/sphere.tet"), testRadius);
-    templates_.push_back(testTemplate);
+    // double testRadius = 1.;
+    // RigidBodyTemplate *testTemplate = new RigidBodyTemplate(string("resources/sphere.tet"), testRadius);
+    // templates_.push_back(testTemplate);
 
-    Vector3d center(0,0,0);
-    Vector3d orient(0,0,0);
-    double density = 1.;
-    RigidBodyInstance *testInst = new RigidBodyInstance(*testTemplate, center, orient, density);
-    testInst->color = Vector3d(0., 0.6, 1.);
-    bodies_.push_back(testInst);
+    // Vector3d center(0,0,0);
+    // Vector3d orient(0,0,0);
+    // double density = 1.;
+    // RigidBodyInstance *testInst = new RigidBodyInstance(*testTemplate, center, orient, density);
+    // testInst->color = Vector3d(0., 0.6, 1.);
+    // bodies_.push_back(testInst);
 
+
+
+    //cloth
+
+    VectorXd clothVerts(3*4);
+    MatrixX3i clothFaces(2, 3);
+    clothFaces.row(0) = Vector3i(0, 1, 2);
+    clothFaces.row(1) = Vector3i(1, 2, 3);
+
+    clothVerts.segment<3>(0) = Vector3d(0., 0., 0.);
+    clothVerts.segment<3>(3) = Vector3d(1., 0., 0.);
+    clothVerts.segment<3>(6) = Vector3d(0., 1., 0.);
+    clothVerts.segment<3>(9) = Vector3d(1., 1., 0.);
+    
+    
+    
+
+    ClothTemplate *clothTemplate = new ClothTemplate(clothVerts, clothFaces);
+
+    ClothInstance* clothInst = new ClothInstance(*clothTemplate, clothVerts);
+
+    cloth_templates_.push_back(clothTemplate);
+    cloths_.push_back(clothInst);
 
     renderLock_.unlock();
 }
@@ -79,6 +104,14 @@ void Simulation::renderObjects()
         {
             (*it)->render();
         }
+
+        for(vector<ClothInstance *>::iterator it = cloths_.begin(); it != cloths_.end(); ++it)
+        {
+            (*it)->render();
+        }
+
+
+
         renderLock_.unlock();
     }
 

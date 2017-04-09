@@ -3,6 +3,7 @@
 
 #include <QGLWidget>
 #include "camera.h"
+#include "vectormath.h"
 
 class Controller;
 
@@ -40,6 +41,7 @@ private:
     bool dragging_;
     Eigen::Vector2d oldpos_;
     double scale_;
+    double rot;
 
     int cameraView_;
 };
