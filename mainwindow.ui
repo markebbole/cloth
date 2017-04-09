@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Seveneves</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="GLPanel" name="GLWidget" native="true">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>0</y>
+      <width>731</width>
+      <height>731</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::StrongFocus</enum>
+    </property>
+   </widget>
+   <widget class="QFrame" name="parameterFrame">
+    <property name="geometry">
+     <rect>
+      <x>749</x>
+      <y>-1</y>
+      <width>441</width>
+      <height>731</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QWidget" name="verticalLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>9</x>
+       <y>-1</y>
+       <width>431</width>
+       <height>731</height>
+      </rect>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QGroupBox" name="simOptionsBox">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>220</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>Simulation Options</string>
+        </property>
+        <widget class="QWidget" name="horizontalLayoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>9</x>
+           <y>19</y>
+           <width>421</width>
+           <height>91</height>
+          </rect>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QGroupBox" name="SimulationBox">
+            <property name="title">
+             <string>Simulation Controls</string>
+            </property>
+            <widget class="QPushButton" name="startSimulationButton">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>40</y>
+               <width>181</width>
+               <height>27</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Start Simulation</string>
+             </property>
+            </widget>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="SimParametersBox">
+            <property name="title">
+             <string>Parameters</string>
+            </property>
+            <widget class="QLabel" name="timeStepLabel">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>30</y>
+               <width>81</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Time Step:</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="newtonTolLabel">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>50</y>
+               <width>131</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Newton Tolerance:</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="newtonMaxItersLabel">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>70</y>
+               <width>131</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Newton Max Iters:</string>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="timeStepEdit">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>30</y>
+               <width>61</width>
+               <height>21</height>
+              </rect>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="newtonTolEdit">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>50</y>
+               <width>61</width>
+               <height>21</height>
+              </rect>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="newtonMaxItersEdit">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>70</y>
+               <width>61</width>
+               <height>21</height>
+              </rect>
+             </property>
+            </widget>
+            <widget class="QLabel" name="moonPiecesButton">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>120</y>
+               <width>121</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Moon Pieces:</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="explosionMag">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>140</y>
+               <width>131</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Explosion Mag:</string>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="moonPieceEdit">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>120</y>
+               <width>61</width>
+               <height>21</height>
+              </rect>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="explosionMagEdit">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>140</y>
+               <width>61</width>
+               <height>21</height>
+              </rect>
+             </property>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="activeForcesBox">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>170</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>Active Forces</string>
+        </property>
+        <widget class="QCheckBox" name="gravityCheckBox">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>30</y>
+           <width>97</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Gravity</string>
+         </property>
+        </widget>
+        <widget class="QCheckBox" name="collisionPenaltyCheckBox">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>50</y>
+           <width>131</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Collision Penalty Force</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="penaltyStiffnessLabel">
+         <property name="geometry">
+          <rect>
+           <x>230</x>
+           <y>50</y>
+           <width>61</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Stiffness:</string>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="penaltyStiffnessEdit">
+         <property name="geometry">
+          <rect>
+           <x>360</x>
+           <y>50</y>
+           <width>61</width>
+           <height>21</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QCheckBox" name="collisionImpulsesCheckBox">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>70</y>
+           <width>131</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Collision Impulses</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="CoRLabel">
+         <property name="geometry">
+          <rect>
+           <x>230</x>
+           <y>70</y>
+           <width>61</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>CoR:</string>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="CoREdit">
+         <property name="geometry">
+          <rect>
+           <x>360</x>
+           <y>70</y>
+           <width>61</width>
+           <height>21</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QLabel" name="velTreshLabel">
+         <property name="geometry">
+          <rect>
+           <x>230</x>
+           <y>90</y>
+           <width>81</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Vel Threshold:</string>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="velTreshEdit">
+         <property name="geometry">
+          <rect>
+           <x>360</x>
+           <y>90</y>
+           <width>61</width>
+           <height>21</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QCheckBox" name="gravityCheckBox_2">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>30</y>
+           <width>97</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Gravity</string>
+         </property>
+        </widget>
+        <zorder>gravityCheckBox</zorder>
+        <zorder>collisionPenaltyCheckBox</zorder>
+        <zorder>penaltyStiffnessLabel</zorder>
+        <zorder>penaltyStiffnessEdit</zorder>
+        <zorder>collisionImpulsesCheckBox</zorder>
+        <zorder>CoRLabel</zorder>
+        <zorder>CoREdit</zorder>
+        <zorder>velTreshLabel</zorder>
+        <zorder>velTreshEdit</zorder>
+        <zorder>UIOptionsBox</zorder>
+        <zorder>gravityCheckBox_2</zorder>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="UIOptionsBox">
+        <property name="title">
+         <string>UI Options</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1200</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuScene">
+    <property name="title">
+     <string>Scene</string>
+    </property>
+    <addaction name="actionReset"/>
+    <addaction name="actionReset_Everything"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuScene"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionReset">
+   <property name="text">
+    <string>Clear Scene</string>
+   </property>
+  </action>
+  <action name="actionReset_Everything">
+   <property name="text">
+    <string>Reset Everything</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>GLPanel</class>
+   <extends>QWidget</extends>
+   <header>glpanel.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

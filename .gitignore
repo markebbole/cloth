@@ -1,0 +1,6 @@
+*.o
+moc_*
+*.pro
+*.pro.user
+Makefile
+cloth.sublime-workspace
