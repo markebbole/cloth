@@ -9,8 +9,8 @@
 using namespace Eigen;
 using namespace std;
 
-ClothInstance::ClothInstance(const ClothTemplate &ctemplate, VectorXd q_init)
-    : q(q_init), ctemplate_(ctemplate)
+ClothInstance::ClothInstance(const ClothTemplate &ctemplate, VectorXd x_init)
+    : x(x_init), ctemplate_(ctemplate)
 {
     
     color = Vector3d(1.0, 1.0, 1.0);
@@ -54,9 +54,9 @@ void ClothInstance::render()
         for(int i=0; i<nfaces; i++)
         {
             Vector3i face = faces.row(i);
-            Vector3d p0 = q.segment<3>(3*face[0]);
-            Vector3d p1 = q.segment<3>(3*face[1]);
-            Vector3d p2 = q.segment<3>(3*face[2]);
+            Vector3d p0 = x.segment<3>(3*face[0]);
+            Vector3d p1 = x.segment<3>(3*face[1]);
+            Vector3d p2 = x.segment<3>(3*face[2]);
 
             Vector3d normal = (p1 - p0).cross(p2-p1);
             normal /= normal.norm();

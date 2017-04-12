@@ -11,14 +11,14 @@ struct AABBNode;
 class ClothInstance
 {
 public:
-    ClothInstance(const ClothTemplate &ctemplate, Eigen::VectorXd q_init);
+    ClothInstance(const ClothTemplate &ctemplate, Eigen::VectorXd x_init);
     ~ClothInstance();
 
     void render();  
 
     int time;  
 
-    Eigen::VectorXd q;
+    Eigen::VectorXd x;
     Eigen::VectorXd v;
 
     Eigen::Vector3d color;
