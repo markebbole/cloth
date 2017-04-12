@@ -1,19 +1,13 @@
 #include "clothinstance.h"
-#include "vectormath.h"
-#include <QGLWidget>
-#include "clothtemplate.h"
-#include <Eigen/Geometry>
-#include <iostream>
-#include "collisiondetection.h"
 
-using namespace Eigen;
-using namespace std;
 
 ClothInstance::ClothInstance(const ClothTemplate &ctemplate, VectorXd x_init)
     : x(x_init), ctemplate_(ctemplate)
 {
     
     color = Vector3d(1.0, 1.0, 1.0);
+    v.resize(x_init.size());
+    v.setZero();
     //AABB = buildAABB(this);
     time = 0;
 }
@@ -73,4 +67,14 @@ void ClothInstance::render()
         glEnd();
     }
     glPopMatrix();
+}
+
+
+void ClothInstance::computeForces(VectorXd& F, vector< Tr >& dFdx, vector< Tr >& dFdv) {
+    //just gravity for right now.
+    SparseMatrix<double> invMass = getTemplate().getInvMass();
+    for(int i = 0; i < (int)x.size()/3; ++i) {
+        double m = 1. / invMass.coeffRef(3*i, 3*i);
+        F(3*i + 1) += -9.8*m;
+    }
 }

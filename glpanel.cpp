@@ -54,7 +54,7 @@ void GLPanel::resizeGL(int w, int h)
 void GLPanel::paintGL()
 {
     assert(cont_);
-    rot += .01;
+    //rot += .01;
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3f (0.0, 0.0, 0.0);

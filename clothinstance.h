@@ -2,9 +2,18 @@
 #define CLOTHINSTANCE_H
 
 #include <Eigen/Core>
+#include <Eigen/Sparse>
 #include <list>
 #include <vector>
+#include "vectormath.h"
+#include <QGLWidget>
+#include "clothtemplate.h"
+#include <Eigen/Geometry>
+#include <iostream>
+#include "collisiondetection.h"
 
+using namespace Eigen;
+using namespace std;
 class ClothTemplate;
 struct AABBNode;
 
@@ -26,6 +35,7 @@ public:
     //AABBNode *AABB;
 
     const ClothTemplate &getTemplate() const {return ctemplate_;}
+    void computeForces(VectorXd& F, vector< Tr >& dFdx, vector< Tr >& dFdv);
 
 private:
     const ClothTemplate &ctemplate_;
