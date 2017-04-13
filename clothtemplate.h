@@ -22,7 +22,7 @@ public:
 
     const Eigen::VectorXd &getVerts() const {return V;}
     const Eigen::MatrixX3i &getFaces() const {return F;}
-    double getDensity() { return density; };
+    double getDensity() const { return density; };
     const Eigen::SparseMatrix<double> &getInvMass() const { return invMass; }
 
 private:
