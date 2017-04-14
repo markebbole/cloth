@@ -6,13 +6,35 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <vector>
-
+#include <map>
 #include <set>
+#include <iostream>
 
 using namespace std;
 using namespace Eigen;
 
 typedef Eigen::Triplet<double> Tr;
+
+struct epair
+{
+    epair(int aa, int bb) : a(aa), b(bb)
+    {
+        if(a < b)
+            std::swap(a,b);
+
+    }
+
+    int a, b;
+    bool operator<(const epair &other) const
+    {
+        if(a < other.a)
+            return true;
+        else if(a > other.a)
+            return false;
+        return b < other.b;
+    }
+};
+
 class ClothTemplate
 {
 public:
@@ -32,8 +54,9 @@ private:
     Eigen::VectorXd V;
     Eigen::MatrixX3i F;
     Eigen::SparseMatrix<double> invMass;
-    double density;
 
+    double density;
+    vector< vector <int> > edgesToFaces;
     void init();
 };
 

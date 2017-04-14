@@ -70,6 +70,11 @@ void ClothInstance::render()
 }
 
 
+// void ClothInstance::computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, vector < Tr > & dFdv) {
+
+// }
+
+
 void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector< Tr >& dFdv) {
     //just gravity for right now.
     SparseMatrix<double> invMass = getTemplate().getInvMass();
@@ -79,7 +84,8 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
     }
 
     //stretching force
-    double kStretch = 1000.;
+    double kStretch = 5000.;
+    double kShear = 500.;
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();
     for(int i = 0; i < (int)triangles.rows(); ++i) {
@@ -172,8 +178,75 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
         F.segment<3>(3*face[1]) += F1;
         F.segment<3>(3*face[2]) += F2;
 
-        /*Matrix3d I;
+
+        double C_shear = triArea * w_u.transpose() * w_v;
+
+        Vector3d dC_shear_dx0 = triArea * (dw_u_dx0 * w_v + w_u * dw_v_dx0);
+        Vector3d dC_shear_dx1 = triArea * (dw_u_dx1 * w_v + w_u * dw_v_dx1);
+        Vector3d dC_shear_dx2 = triArea * (dw_u_dx2 * w_v + w_u * dw_v_dx2);
+
+
+        F.segment<3>(3*face[0]) += -kShear * dC_shear_dx0 * C_shear;
+        F.segment<3>(3*face[1]) += -kShear * dC_shear_dx1 * C_shear;
+        F.segment<3>(3*face[2]) += -kShear * dC_shear_dx2 * C_shear;
+
+
+        Matrix3d I;
         I.setIdentity();
+
+        double c00 = triArea * 2*(dw_u_dx0 * dw_v_dx0);
+        Matrix3d C2_shear_00 = c00*I;
+
+        double c10 = triArea * (dw_u_dx0 * dw_v_dx1 + dw_u_dx1 * dw_v_dx0);
+        Matrix3d C2_shear_10 = c10*I;
+
+        double c20 = triArea * (dw_u_dx2 * dw_v_dx0 + dw_u_dx0 * dw_v_dx2);
+        Matrix3d C2_shear_20 = c20*I;
+
+        double c11 = triArea * 2*(dw_u_dx1 * dw_v_dx1);
+        Matrix3d C2_shear_11 = c11*I;
+
+        double c22 = triArea * 2*(dw_u_dx2 * dw_v_dx2);
+        Matrix3d C2_shear_22 = c22*I;
+
+        double c21 = triArea * (dw_u_dx2 * dw_v_dx1 + dw_u_dx1 * dw_v_dx2);
+        Matrix3d C2_shear_21 = c21*I;
+
+        Matrix3d K_shear_00 = -kShear * (dC_shear_dx0 * dC_shear_dx0.transpose() + C2_shear_00 * C_shear);
+        Matrix3d K_shear_11 = -kShear * (dC_shear_dx1 * dC_shear_dx1.transpose() + C2_shear_11 * C_shear);
+        Matrix3d K_shear_22 = -kShear * (dC_shear_dx2 * dC_shear_dx2.transpose() + C2_shear_22 * C_shear);
+        Matrix3d K_shear_10 = -kShear * (dC_shear_dx1 * dC_shear_dx0.transpose() + C2_shear_10 * C_shear);
+        Matrix3d K_shear_20 = -kShear * (dC_shear_dx2 * dC_shear_dx0.transpose() + C2_shear_20 * C_shear);
+        Matrix3d K_shear_21 = -kShear * (dC_shear_dx2 * dC_shear_dx1.transpose() + C2_shear_21 * C_shear);
+
+
+        
+        MatrixXd shearDeriv(x.size(), x.size());
+        shearDeriv.setZero();
+        shearDeriv.block<3,3>(3*face[0], 3*face[0]) = K_shear_00;
+        shearDeriv.block<3,3>(3*face[1], 3*face[1]) = K_shear_11;
+        shearDeriv.block<3,3>(3*face[2], 3*face[2]) = K_shear_22;
+
+        // cout << "YOO 6" << endl;
+        shearDeriv.block<3,3>(3*face[1], 3*face[0]) = K_shear_10;
+        shearDeriv.block<3,3>(3*face[2], 3*face[0]) = K_shear_20;
+        shearDeriv.block<3,3>(3*face[2], 3*face[1]) = K_shear_21;
+        shearDeriv.block<3,3>(3*face[0], 3*face[0]) = K_shear_10.transpose();
+        shearDeriv.block<3,3>(3*face[0], 3*face[2]) = K_shear_20.transpose();
+        shearDeriv.block<3,3>(3*face[1], 3*face[2]) = K_shear_21.transpose();
+
+
+        dFdx += shearDeriv.sparseView();
+
+
+
+        //computeShearForce(F, dFdx, dFdv);
+
+
+
+
+
+
 
         // cout << "YOOOOO1" << endl;
 
@@ -264,6 +337,10 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
         F.segment<3>(3*face[1]) += F_stretch.segment<3>(3);
         F.segment<3>(3*face[2]) += F_stretch.segment<3>(6);
         */
+
+
+
+
     }
 
 }

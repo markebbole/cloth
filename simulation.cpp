@@ -155,7 +155,7 @@ void Simulation::takeSimulationStep()
         //SparseMatrix<double> dFdx(cloth->x.size(), cloth->x.size());
         //dFdx.setFromTriplets(dFdx_coeffs.begin(), dFdx_coeffs.end());
 
-        /*SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
+        SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
         dFdv.setFromTriplets(dFdv_coeffs.begin(), dFdv_coeffs.end());
 
 
@@ -163,9 +163,9 @@ void Simulation::takeSimulationStep()
         SparseMatrix<double> I(cloth->x.size(), cloth->x.size());
         I.setIdentity();
 
-        SparseMatrix<double> invMass = cloth->getTemplate().getInvMass();
+        //SparseMatrix<double> invMass = cloth->getTemplate().getInvMass();
 
-        double h = params_.timeStep;
+        //double h = params_.timeStep;
 
         SparseMatrix<double> A = I - h * invMass * dFdv - h * h * invMass * dFdx;
 
@@ -173,7 +173,7 @@ void Simulation::takeSimulationStep()
 
         solver.compute(A);
 
-        VectorXd delta_v = solver.solve(b);*/
+        VectorXd delta_v = solver.solve(b);
 
 
 
@@ -182,11 +182,11 @@ void Simulation::takeSimulationStep()
         computeForce(q, oldq, F);
         v += params_.timeStep*Minv*F;*/
 
-        cloth->x += h * cloth->v;
-        cloth->v += h * invMass * F;
+        //cloth->x += h * cloth->v;
+        //cloth->v += h * invMass * F;
 
-        //cloth->x += h * (cloth->v + delta_v);
-        //cloth->v += delta_v;
+        cloth->x += h * (cloth->v + delta_v);
+        cloth->v += delta_v;
 
 
     }
