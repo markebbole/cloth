@@ -182,11 +182,11 @@ void Simulation::takeSimulationStep()
         computeForce(q, oldq, F);
         v += params_.timeStep*Minv*F;*/
 
-        //cloth->x += h * cloth->v;
-        //cloth->v += h * invMass * F;
+        cloth->x += h * cloth->v;
+        cloth->v += h * invMass * F;
 
-        cloth->x += h * (cloth->v + delta_v);
-        cloth->v += delta_v;
+        //cloth->x += h * (cloth->v + delta_v);
+        //cloth->v += delta_v;
 
 
     }

@@ -9,7 +9,7 @@
 #include <map>
 #include <set>
 #include <iostream>
-
+#include <utility>
 using namespace std;
 using namespace Eigen;
 
@@ -46,6 +46,8 @@ public:
     const Eigen::MatrixX3i &getFaces() const {return F;}
     double getDensity() const { return density; };
     const Eigen::SparseMatrix<double> &getInvMass() const { return invMass; }
+    const vector < Vector4i > &getAdjacentFaces() const { return adjacentFaces; }
+
 
 private:
     ClothTemplate(const ClothTemplate &other);
@@ -54,7 +56,8 @@ private:
     Eigen::VectorXd V;
     Eigen::MatrixX3i F;
     Eigen::SparseMatrix<double> invMass;
-
+    vector< Vector4i > adjacentFaces;
+    
     double density;
     vector< vector <int> > edgesToFaces;
     void init();
