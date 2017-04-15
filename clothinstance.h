@@ -38,6 +38,8 @@ public:
     void computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector< Tr >& dFdv);
 
 private:
+    void computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, vector < Tr > & dFdv);
+
     const ClothTemplate &ctemplate_;
 };
 

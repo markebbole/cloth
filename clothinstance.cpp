@@ -57,7 +57,7 @@ void ClothInstance::render()
 
             //for(int j=0; j<3; j++)
             //{                
-                glColor4d(normal[0]*normal[0], normal[1]*normal[1], normal[2]*normal[2],1.0);
+                //glColor4d(normal[0]*normal[0], normal[1]*normal[1], normal[2]*normal[2],1.0);
             glNormal3d(normal[0], normal[1], normal[2]);
             glVertex3d(p0[0], p0[1], p0[2]);
             glVertex3d(p1[0], p1[1], p1[2]);
@@ -70,9 +70,10 @@ void ClothInstance::render()
 }
 
 
-// void ClothInstance::computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, vector < Tr > & dFdv) {
+void ClothInstance::computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, vector < Tr > & dFdv) {
 
-// }
+}
+
 
 
 void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector< Tr >& dFdv) {
@@ -84,10 +85,11 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
     }
 
     //stretching force
-    double kStretch = 5000.;
-    double kShear = 500.;
+    double kStretch = 1000.;
+    double kShear = 100.;
 
     double kBend = 0.00001;
+    double kDampStretch = 0.2;
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();
     Matrix3d I;
@@ -117,7 +119,6 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
         double delta_u1 = delta_uv1(0);
         double delta_u2 = delta_uv2(0);
 
-
         // cout << "YOOOOOOOO 2 " << endl;
 
         double uv_denom = delta_u1 * delta_v2 - delta_u2 * delta_v1;
@@ -129,37 +130,31 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
         Vector3d w_u = delta_x1 * M(0,0) + delta_x2 * M(1,0);
         Vector3d w_v = delta_x1 * M(0,1) + delta_x2 * M(1,1);
 
-
-       // Vector3d w_u = ((x1 - x0) * delta_v2 - (x2 - x0) * delta_v1) / uv_denom;
-        //Vector3d w_v = -((x1 - x0) * delta_u2 + (x2 - x0) * delta_u1) / uv_denom;
-
         Vector3d w_u_hat = w_u / w_u.norm();
         Vector3d w_v_hat = w_v / w_v.norm();
-
-
-        //test w
-
         
-        //cout << "origu: " << w_u << endl << w_u2 << endl;
-        //cout << "origv: " << w_v << endl << w_v2 << endl;
         Vector2d C_stretch(triArea * (w_u.norm() - 1), triArea * (w_v.norm() - 1));
 
-        double dw_u_dx0 = (delta_v1 - delta_v2) / uv_denom;
-        double dw_u_dx1 = delta_v2 / uv_denom;
-        double dw_u_dx2 = -delta_v1 / uv_denom;
+        double dw_u_dx[3] = {
+            (delta_v1 - delta_v2) / uv_denom,
+            delta_v2 / uv_denom,
+            -delta_v1 / uv_denom
+        };
 
-        double dw_v_dx0 = (delta_u2 - delta_u1) / uv_denom;
-        double dw_v_dx1 = -delta_u2 / uv_denom;
-        double dw_v_dx2 = delta_u1 / uv_denom;
+        double dw_v_dx[3] = {
+            (delta_u2 - delta_u1) / uv_denom,
+            -delta_u2 / uv_denom,
+            delta_u1 / uv_denom,
+        };
 
-        Vector3d dCu_dx0 = triArea * dw_u_dx0 * w_u_hat;
-        Vector3d dCu_dx1 = triArea * dw_u_dx1 * w_u_hat;
-        Vector3d dCu_dx2 = triArea * dw_u_dx2 * w_u_hat;
+        Vector3d dCu_dx0 = triArea * dw_u_dx[0] * w_u_hat;
+        Vector3d dCu_dx1 = triArea * dw_u_dx[1] * w_u_hat;
+        Vector3d dCu_dx2 = triArea * dw_u_dx[2] * w_u_hat;
         
         // cout << "YOOOOOO 3" << endl;
-        Vector3d dCv_dx0 = triArea * dw_v_dx0 * w_v_hat;
-        Vector3d dCv_dx1 = triArea * dw_v_dx1 * w_v_hat;
-        Vector3d dCv_dx2 = triArea * dw_v_dx2 * w_v_hat;
+        Vector3d dCv_dx0 = triArea * dw_v_dx[0] * w_v_hat;
+        Vector3d dCv_dx1 = triArea * dw_v_dx[1] * w_v_hat;
+        Vector3d dCv_dx2 = triArea * dw_v_dx[2] * w_v_hat;
 
         MatrixXd dC_dx0(3,2);
         dC_dx0.col(0) = dCu_dx0;
@@ -183,37 +178,49 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
         F.segment<3>(3*face[2]) += F2;
 
 
+        Vector3d F_damp0 = -kDampStretch * dC_dx0 * dC_dx0.transpose() * v.segment<3>(3*face[0]);
+        Vector3d F_damp1 = -kDampStretch * dC_dx1 * dC_dx1.transpose() * v.segment<3>(3*face[1]);
+        Vector3d F_damp2 = -kDampStretch * dC_dx2 * dC_dx2.transpose() * v.segment<3>(3*face[2]);
+        
+        F.segment<3>(3*face[0]) += F_damp0;
+        F.segment<3>(3*face[1]) += F_damp1;
+        F.segment<3>(3*face[2]) += F_damp2;
+
         double C_shear = triArea * w_u.transpose() * w_v;
 
-        Vector3d dC_shear_dx0 = triArea * (dw_u_dx0 * w_v + w_u * dw_v_dx0);
-        Vector3d dC_shear_dx1 = triArea * (dw_u_dx1 * w_v + w_u * dw_v_dx1);
-        Vector3d dC_shear_dx2 = triArea * (dw_u_dx2 * w_v + w_u * dw_v_dx2);
+        Vector3d dC_shear_dx0 = triArea * (dw_u_dx[0] * w_v + w_u * dw_v_dx[0]);
+        Vector3d dC_shear_dx1 = triArea * (dw_u_dx[1] * w_v + w_u * dw_v_dx[1]);
+        Vector3d dC_shear_dx2 = triArea * (dw_u_dx[2] * w_v + w_u * dw_v_dx[2]);
 
 
         F.segment<3>(3*face[0]) += -kShear * dC_shear_dx0 * C_shear;
         F.segment<3>(3*face[1]) += -kShear * dC_shear_dx1 * C_shear;
         F.segment<3>(3*face[2]) += -kShear * dC_shear_dx2 * C_shear;
 
+        F.segment<3>(3*face[0]) += -kDampStretch * dC_shear_dx0 * dC_shear_dx0.transpose() * v.segment<3>(3*face[0]);
+        F.segment<3>(3*face[1]) += -kDampStretch * dC_shear_dx1 * dC_shear_dx1.transpose() * v.segment<3>(3*face[1]);
+        F.segment<3>(3*face[2]) += -kDampStretch * dC_shear_dx2 * dC_shear_dx2.transpose() * v.segment<3>(3*face[2]);
+
 
         Matrix3d I;
         I.setIdentity();
 
-        double c00 = triArea * 2*(dw_u_dx0 * dw_v_dx0);
+        double c00 = triArea * 2*(dw_u_dx[0] * dw_v_dx[0]);
         Matrix3d C2_shear_00 = c00*I;
 
-        double c10 = triArea * (dw_u_dx0 * dw_v_dx1 + dw_u_dx1 * dw_v_dx0);
+        double c10 = triArea * (dw_u_dx[0] * dw_v_dx[1] + dw_u_dx[1] * dw_v_dx[0]);
         Matrix3d C2_shear_10 = c10*I;
 
-        double c20 = triArea * (dw_u_dx2 * dw_v_dx0 + dw_u_dx0 * dw_v_dx2);
+        double c20 = triArea * (dw_u_dx[2] * dw_v_dx[0] + dw_u_dx[0] * dw_v_dx[2]);
         Matrix3d C2_shear_20 = c20*I;
 
-        double c11 = triArea * 2*(dw_u_dx1 * dw_v_dx1);
+        double c11 = triArea * 2*(dw_u_dx[1] * dw_v_dx[1]);
         Matrix3d C2_shear_11 = c11*I;
 
-        double c22 = triArea * 2*(dw_u_dx2 * dw_v_dx2);
+        double c22 = triArea * 2*(dw_u_dx[2] * dw_v_dx[2]);
         Matrix3d C2_shear_22 = c22*I;
 
-        double c21 = triArea * (dw_u_dx2 * dw_v_dx1 + dw_u_dx1 * dw_v_dx2);
+        double c21 = triArea * (dw_u_dx[2] * dw_v_dx[1] + dw_u_dx[1] * dw_v_dx[2]);
         Matrix3d C2_shear_21 = c21*I;
 
         Matrix3d K_shear_00 = -kShear * (dC_shear_dx0 * dC_shear_dx0.transpose() + C2_shear_00 * C_shear);
@@ -246,32 +253,16 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
 
         //computeShearForce(F, dFdx, dFdv);
 
-
-
-
-
-
-
         // cout << "YOOOOO1" << endl;
+        Matrix3d d2C_u[3][3];
 
-        Matrix3d d2C_u_00 = triArea / w_u.norm() * (dw_u_dx0 * dw_u_dx0) * (I - w_u_hat * w_u_hat.transpose());
-        Matrix3d d2C_v_00 = triArea / w_v.norm() * (dw_v_dx0 * dw_v_dx0) * (I - w_v_hat * w_v_hat.transpose());
+        for(int z = 0; z < 3; ++z) {
+            for(int zz = 0; zz < 3; ++zz) {
+                d2C_u[z][zz] =  = triArea / w_u.norm() * (dw_u_dx[z] * dw_u_dx[zz]) * (I - w_u_hat * w_u_hat.transpose());
+                d2C_v[z][zz] =  = triArea / w_v.norm() * (dw_v_dx[z] * dw_v_dx[zz]) * (I - w_v_hat * w_v_hat.transpose());
         
-        Matrix3d d2C_u_11 = triArea / w_u.norm() * (dw_u_dx1 * dw_u_dx1) * (I - w_u_hat * w_u_hat.transpose());
-        Matrix3d d2C_v_11 = triArea / w_v.norm() * (dw_v_dx1 * dw_v_dx1) * (I - w_v_hat * w_v_hat.transpose());
-        
-        Matrix3d d2C_u_22 = triArea / w_u.norm() * (dw_u_dx2 * dw_u_dx2) * (I - w_u_hat * w_u_hat.transpose());
-        Matrix3d d2C_v_22 = triArea / w_v.norm() * (dw_v_dx2 * dw_v_dx2) * (I - w_v_hat * w_v_hat.transpose());
-        
-
-        Matrix3d d2C_u_10 = triArea / w_u.norm() * (dw_u_dx1 * dw_u_dx0) * (I - w_u_hat * w_u_hat.transpose());
-        Matrix3d d2C_v_10 = triArea / w_v.norm() * (dw_v_dx1 * dw_v_dx0) * (I - w_v_hat * w_v_hat.transpose());
-        
-        Matrix3d d2C_u_20 = triArea / w_u.norm() * (dw_u_dx2 * dw_u_dx0) * (I - w_u_hat * w_u_hat.transpose());
-        Matrix3d d2C_v_20 = triArea / w_v.norm() * (dw_v_dx2 * dw_v_dx0) * (I - w_v_hat * w_v_hat.transpose());
-        
-        Matrix3d d2C_u_21 = triArea / w_u.norm() * (dw_u_dx2 * dw_u_dx1) * (I - w_u_hat * w_u_hat.transpose());
-        Matrix3d d2C_v_21 = triArea / w_v.norm() * (dw_v_dx2 * dw_v_dx1) * (I - w_v_hat * w_v_hat.transpose());
+            }
+        }
 
         // cout << "YOOO 4" << endl;
         
@@ -287,6 +278,8 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
         //00
         MatrixXd springDeriv(x.size(), x.size());
         springDeriv.setZero();
+
+        MatrixXd springDampDeriv(x.size(), x.size());
         springDeriv.block<3,3>(3*face[0], 3*face[0]) = K_00;
         springDeriv.block<3,3>(3*face[1], 3*face[1]) = K_11;
         springDeriv.block<3,3>(3*face[2], 3*face[2]) = K_22;
@@ -300,52 +293,6 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
         springDeriv.block<3,3>(3*face[1], 3*face[2]) = K_21.transpose();
         // cout << "Yooo 7" << endl;
         dFdx += springDeriv.sparseView();
-
-        // cout << "YOOOO  END" << endl;
-
-
-        //Vector3d w_v = ()
-        //cout << w_u << " " << w_v << endl;
-        /*double c0 = w_u.norm() - 1;
-        double c1 = w_v.norm() - 1;
-
-        Vector2d C_stretch(triArea*c0, triaArea*c1);
-
-        MatrixXd P(9, 3);
-
-        P.setZero();
-        double s1 = -M(0,0) - M(0, 1);
-        double s2 = M(0,0);
-        double s3 = M(0,1);
-        Matrix3d I;
-        I.setIdentity();
-
-        P.block<3,3>(0, 0) = s1*I;
-        P.block<3,3>(3, 0) = s2*I;
-        P.block<3,3>(6, 0) = s3*I;
-
-        VectorXd dC1 = triArea * P * w_u / w_u.norm();
-
-        s1 = -M(1,0) - M(1,1);
-        s2 = M(1,0);
-        s3 = M(1,1);
-
-        P.block<3,3>(0,0) = s1*I;
-        P.block<3,3>(3,0) = s2*I;
-        P.block<3,3>(6,0) = s3*I;
-
-        VectorXd dC2 = triArea * P * w_v / w_v.norm();
-
-        VectorXd F_stretch = -kStretch * (dC1 * C_stretch(0) + dC2 * C_stretch(1));
-        F.segment<3>(3*face[0]) += F_stretch.segment<3>(0);
-        F.segment<3>(3*face[1]) += F_stretch.segment<3>(3);
-        F.segment<3>(3*face[2]) += F_stretch.segment<3>(6);
-        */
-
-
-
-
-
 
 
     }
@@ -401,154 +348,78 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
 
         double C_bend = atan2(sin_theta, cos_theta);
 
-        Vector3d q_a_0 = x2-x1;
-        Vector3d q_a_1 = x0-x2;
-        Vector3d q_a_2 = x1-x0;
-        Vector3d q_a_3;
-        q_a_3.setZero();
+        Vector3d q_a[4] = {x2-x1, x0-x2, x1-x0, Vector3d(0.,0.,0.)};
 
-        Vector3d q_b_0;
-        q_b_0.setZero();
-        Vector3d q_b_1 = x2-x3;
-        Vector3d q_b_2 = x3-x1;
-        Vector3d q_b_3 = x1-x2;
+        Vector3d q_b[4] = {Vector3d(0.,0.,0.), x2-x3, x3-x1, x1-x2};
+
 
         Vector4d q_e(0,1,-1,0);
 
 
+
+
         //eq 31
-        Vector3d dna_dx0_0 = VectorMath::crossProductMatrix(q_a_0).row(0);
-        Vector3d dna_dx0_1 = VectorMath::crossProductMatrix(q_a_0).row(1);
-        Vector3d dna_dx0_2 = VectorMath::crossProductMatrix(q_a_0).row(2);
-        
-        Vector3d dna_dx1_0 = VectorMath::crossProductMatrix(q_a_1).row(0);
-        Vector3d dna_dx1_1 = VectorMath::crossProductMatrix(q_a_1).row(1);
-        Vector3d dna_dx1_2 = VectorMath::crossProductMatrix(q_a_1).row(2);
-        
-        Vector3d dna_dx2_0 = VectorMath::crossProductMatrix(q_a_2).row(0);
-        Vector3d dna_dx2_1 = VectorMath::crossProductMatrix(q_a_2).row(1);
-        Vector3d dna_dx2_2 = VectorMath::crossProductMatrix(q_a_2).row(2);
-        
-        Vector3d dna_dx3_0 = VectorMath::crossProductMatrix(q_a_3).row(0);
-        Vector3d dna_dx3_1 = VectorMath::crossProductMatrix(q_a_3).row(1);
-        Vector3d dna_dx3_2 = VectorMath::crossProductMatrix(q_a_3).row(2);
-        
-
+        Vector3d dna_dx[4][3];
+        for(int z = 0; z < 4; ++z) {
+            Matrix3d cp = VectorMath::crossProductMatrix(q_a[z]);
+            for(int zz = 0; zz < 3; ++zz) {
+                dna_dx[z][zz] = cp.row(zz);
+            }
+        }
         //eq 32
-        Vector3d dnb_dx0_0 = VectorMath::crossProductMatrix(q_b_0).row(0);
-        Vector3d dnb_dx0_1 = VectorMath::crossProductMatrix(q_b_0).row(1);
-        Vector3d dnb_dx0_2 = VectorMath::crossProductMatrix(q_b_0).row(2);
-        
-        Vector3d dnb_dx1_0 = VectorMath::crossProductMatrix(q_b_1).row(0);
-        Vector3d dnb_dx1_1 = VectorMath::crossProductMatrix(q_b_1).row(1);
-        Vector3d dnb_dx1_2 = VectorMath::crossProductMatrix(q_b_1).row(2);
-        
-        Vector3d dnb_dx2_0 = VectorMath::crossProductMatrix(q_b_2).row(0);
-        Vector3d dnb_dx2_1 = VectorMath::crossProductMatrix(q_b_2).row(1);
-        Vector3d dnb_dx2_2 = VectorMath::crossProductMatrix(q_b_2).row(2);
-        
-        Vector3d dnb_dx3_0 = VectorMath::crossProductMatrix(q_b_3).row(0);
-        Vector3d dnb_dx3_1 = VectorMath::crossProductMatrix(q_b_3).row(1);
-        Vector3d dnb_dx3_2 = VectorMath::crossProductMatrix(q_b_3).row(2);
-        
-        //eq 33
-        Vector3d de_dx0_0 = q_e[0] * I.col(0);
-        Vector3d de_dx0_1 = q_e[0] * I.col(1);
-        Vector3d de_dx0_2 = q_e[0] * I.col(2);
-        
-        Vector3d de_dx1_0 = q_e[1] * I.col(0);
-        Vector3d de_dx1_1 = q_e[1] * I.col(1);
-        Vector3d de_dx1_2 = q_e[1] * I.col(2);
-        
-        Vector3d de_dx2_0 = q_e[2] * I.col(0);
-        Vector3d de_dx2_1 = q_e[2] * I.col(1);
-        Vector3d de_dx2_2 = q_e[2] * I.col(2);
-        
-        Vector3d de_dx3_0 = q_e[3] * I.col(0);
-        Vector3d de_dx3_1 = q_e[3] * I.col(1);
-        Vector3d de_dx3_2 = q_e[3] * I.col(2);
+        Vector3d dnb_dx[4][3];
+        for(int z = 0; z < 4; ++z) {
+            Matrix3d cp = VectorMath::crossProductMatrix(q_b[z]);
+            for(int zz = 0; zz < 3; ++zz) {
+                dnb_dx[z][zz] = cp.row(zz);
+            }
+        }
 
+        //eq 33
+        Vector3d de_dx[4][3];
+        for(int z = 0; z < 4; ++z) {
+            for(int zz = 0; zz < 3; ++zz) {
+                de_dx[z][zz] = q_e[z] * I.col(zz);
+            }
+        }
 
         double n_a_norm = n_a.norm();
         double n_b_norm = n_b.norm();
         double e_norm = e.norm();
 
-        double dcos_theta_dx00 = (1./n_a_norm)* dna_dx0_0.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx0_0);
-        double dcos_theta_dx01 = (1./n_a_norm)* dna_dx0_1.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx0_1);
-        double dcos_theta_dx02 = (1./n_a_norm)* dna_dx0_2.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx0_2);
-
-        double dcos_theta_dx10 = (1./n_a_norm)* dna_dx1_0.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx1_0);
-        double dcos_theta_dx11 = (1./n_a_norm)* dna_dx1_1.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx1_1);
-        double dcos_theta_dx12 = (1./n_a_norm)* dna_dx1_2.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx1_2);
-
-        double dcos_theta_dx20 = (1./n_a_norm)* dna_dx2_0.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx2_0);
-        double dcos_theta_dx21 = (1./n_a_norm)* dna_dx2_1.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx2_1);
-        double dcos_theta_dx22 = (1./n_a_norm)* dna_dx2_2.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx2_2);
-        
-        double dcos_theta_dx30 = (1./n_a_norm)* dna_dx3_0.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx3_0);
-        double dcos_theta_dx31 = (1./n_a_norm)* dna_dx3_1.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx3_1);
-        double dcos_theta_dx32 = (1./n_a_norm)* dna_dx3_2.dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx3_2);
-
-        
-        double dsin_theta_dx00 = (((1./n_a_norm) * dna_dx0_0).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx0_0)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx0_0);
-        
-        double dsin_theta_dx01 = (((1./n_a_norm) * dna_dx0_1).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx0_1)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx0_1);
-        
-        double dsin_theta_dx02 = (((1./n_a_norm) * dna_dx0_2).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx0_2)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx0_2);
-
-        
-        double dsin_theta_dx10 = (((1./n_a_norm) * dna_dx1_0).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx1_0)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx1_0);
-        
-        double dsin_theta_dx11 = (((1./n_a_norm) * dna_dx1_1).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx1_1)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx1_1);
-        
-        double dsin_theta_dx12 = (((1./n_a_norm) * dna_dx1_2).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx1_2)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx1_2);
+        double dcos_theta_dx[4][3];
 
 
-        double dsin_theta_dx20 = (((1./n_a_norm) * dna_dx2_0).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx2_0)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx2_0);
+        for(int z = 0; z < 4; ++z) {
+            for(int zz = 0; zz < 3; ++zz) {
+                dcos_theta_dx[z][zz] = (1./n_a_norm) * dna_dx[z][zz].dot(n_b_hat) + (1./n_b_norm) * n_a_hat.dot(dnb_dx[z][zz]);
+
+            }
+        }
+
+        double dsin_theta_dx[4][3];
+        for(int z = 0; z < 4; ++z) {
+           
+            for(int zz = 0; zz < 3; ++zz) {
+                dsin_theta_dx[z][zz] = (((1./n_a_norm) * dna_dx[z][zz]).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx[z][zz])).dot(e_hat) +
+                    (n_a_hat.cross(n_b_hat)).dot((1./e_norm) * de_dx[z][zz]);
+            }
+        }
         
-        double dsin_theta_dx21 = (((1./n_a_norm) * dna_dx2_1).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx2_1)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx2_1);
+        double dC_bend_dx[4][3];
+
+        for(int z = 0; z < 4; ++z) {
+            for(int zz = 0; zz < 3; ++zz) {
+                dC_bend_dx[z][zz] = cos_theta * dsin_theta_dx[z][zz] - sin_theta * dcos_theta_dx[z][zz];
+            }
+        }
         
-        double dsin_theta_dx22 = (((1./n_a_norm) * dna_dx2_2).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx2_2)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx2_2);
+        Vector3d dC_bend_0(dC_bend_dx[0][0], dC_bend_dx[0][1], dC_bend_dx[0][2]);
+        Vector3d dC_bend_1(dC_bend_dx[1][0], dC_bend_dx[1][1], dC_bend_dx[1][2]);
+        Vector3d dC_bend_2(dC_bend_dx[2][0], dC_bend_dx[2][1], dC_bend_dx[2][2]);
+        Vector3d dC_bend_3(dC_bend_dx[3][0], dC_bend_dx[3][1], dC_bend_dx[3][2]);
 
-
-        double dsin_theta_dx30 = (((1./n_a_norm) * dna_dx3_0).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx3_0)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx3_0);
-        
-        double dsin_theta_dx31 = (((1./n_a_norm) * dna_dx3_1).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx3_1)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx3_1);
-        
-        double dsin_theta_dx32 = (((1./n_a_norm) * dna_dx3_2).cross(n_b_hat) + n_a_hat.cross((1./n_b_norm) * dnb_dx3_2)).dot(e_hat) +
-            (n_a_hat.cross(n_b_hat)).dot((1./e_norm)*de_dx3_2);
-        
-        double dC_bend_dx00 = cos_theta * dsin_theta_dx00 - sin_theta * dcos_theta_dx00;
-        double dC_bend_dx01 = cos_theta * dsin_theta_dx01 - sin_theta * dcos_theta_dx01;
-        double dC_bend_dx02 = cos_theta * dsin_theta_dx02 - sin_theta * dcos_theta_dx02;
-
-        double dC_bend_dx10 = cos_theta * dsin_theta_dx10 - sin_theta * dcos_theta_dx10;
-        double dC_bend_dx11 = cos_theta * dsin_theta_dx11 - sin_theta * dcos_theta_dx11;
-        double dC_bend_dx12 = cos_theta * dsin_theta_dx12 - sin_theta * dcos_theta_dx12;
-
-        double dC_bend_dx20 = cos_theta * dsin_theta_dx20 - sin_theta * dcos_theta_dx20;
-        double dC_bend_dx21 = cos_theta * dsin_theta_dx21 - sin_theta * dcos_theta_dx21;
-        double dC_bend_dx22 = cos_theta * dsin_theta_dx22 - sin_theta * dcos_theta_dx22;
-
-        double dC_bend_dx30 = cos_theta * dsin_theta_dx30 - sin_theta * dcos_theta_dx30;
-        double dC_bend_dx31 = cos_theta * dsin_theta_dx31 - sin_theta * dcos_theta_dx31;
-        double dC_bend_dx32 = cos_theta * dsin_theta_dx32 - sin_theta * dcos_theta_dx32;
-
-        Vector3d dC_bend_0(dC_bend_dx00, dC_bend_dx01, dC_bend_dx02);
-        Vector3d dC_bend_1(dC_bend_dx10, dC_bend_dx11, dC_bend_dx12);
-        Vector3d dC_bend_2(dC_bend_dx20, dC_bend_dx21, dC_bend_dx22);
-        Vector3d dC_bend_3(dC_bend_dx30, dC_bend_dx31, dC_bend_dx32);
+        Vector3d dC_bend[4] = {dC_bend_0, dC_bend_1, dC_bend_2, dC_bend_3};
 
         Vector3d F_0 = -kBend * dC_bend_0 * C_bend;
         Vector3d F_1 = -kBend * dC_bend_1 * C_bend;
@@ -559,9 +430,136 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, vector
         F.segment<3>(3*p1) += F_1;
         F.segment<3>(3*p2) += F_2;
         F.segment<3>(3*p3) += F_3;
+
+        Vector3d d2na_dx[4][3][4][3];
+        Vector3d d2nb_dx[4][3][4][3];
+        Matrix3d Z;
+        Z.setZero();
+        Matrix3d dq0a_dx[4] = {Z, -I, I, Z};
+        Matrix3d dq1a_dx[4] = {I, Z, -I, Z};
+        Matrix3d dq2a_dx[4] = {-I, I, Z, Z};
+        Matrix3d dq3a_dx[4] = {Z, Z, Z, Z};
+
+        Matrix3d dq0b_dx[4] = {Z, Z, Z, Z};
+        Matrix3d dq1b_dx[4] = {Z, Z, I, -I};
+        Matrix3d dq2b_dx[4] = {Z, -I, Z, I};
+        Matrix3d dq3b_dx[4] = {Z, I, -I, Z};
+
+        //m0
+        for(int s = 0; s < 3; ++s) {
+            for(int n = 0; n < 4; ++n) {
+                for(int t = 0; t < 3; ++t) {
+                    d2na_dx[0][s][n][t] = VectorMath::crossProductMatrix(dq0a_dx[n].col(t)).row(s);
+                    d2nb_dx[0][s][n][t] = VectorMath::crossProductMatrix(dq0b_dx[n].col(t)).row(s);
+                }
+            }
+        }
+
+        //m1
+        for(int s = 0; s < 3; ++s) {
+            for(int n = 0; n < 4; ++n) {
+                for(int t = 0; t < 3; ++t) {
+                    d2na_dx[1][s][n][t] = VectorMath::crossProductMatrix(dq1a_dx[n].col(t)).row(s);
+                    d2nb_dx[1][s][n][t] = VectorMath::crossProductMatrix(dq1b_dx[n].col(t)).row(s);
+                    
+                }
+            }
+        }
+
+        //m2
+        for(int s = 0; s < 3; ++s) {
+            for(int n = 0; n < 4; ++n) {
+                for(int t = 0; t < 3; ++t) {
+                    d2na_dx[2][s][n][t] = VectorMath::crossProductMatrix(dq2a_dx[n].col(t)).row(s);
+                    d2nb_dx[2][s][n][t] = VectorMath::crossProductMatrix(dq2b_dx[n].col(t)).row(s);
+                    
+                }
+            }
+        }
+
+        //m3
+        for(int s = 0; s < 3; ++s) {
+            for(int n = 0; n < 4; ++n) {
+                for(int t = 0; t < 3; ++t) {
+                    d2na_dx[3][s][n][t] = VectorMath::crossProductMatrix(dq3a_dx[n].col(t)).row(s);
+                    d2nb_dx[3][s][n][t] = VectorMath::crossProductMatrix(dq3b_dx[n].col(t)).row(s);
+                    
+                }
+            }
+        }
         
-        
-        
+        double d2cos_theta_dxdx[4][3][4][3];
+        for(int m = 0; m < 4; ++m) {
+            for(int s = 0; s < 3; ++s) {
+                for(int n = 0; n < 4; ++n) {
+                    for(int t = 0; t < 3; ++t) {
+                        d2cos_theta_dxdx[m][s][n][t] = (1./n_a_norm)*d2na_dx[m][s][n][t].dot(n_b_hat) 
+                            + (1./n_b_norm/n_a_norm) * dnb_dx[n][t].dot(dna_dx[m][s])
+                            + (1./n_b_norm/n_a_norm) * dna_dx[n][t].dot(dnb_dx[m][s])
+                            + (n_a_hat.dot(d2nb_dx[m][s][n][t]));
+                    }
+                }
+            }
+        }
+
+
+        double d2sin_theta_dxdx[4][3][4][3];
+        for(int m = 0; m < 4; ++m) {
+            for(int s = 0; s < 3; ++s) {
+                for(int n = 0; n < 4; ++n) {
+                    for(int t = 0; t < 3; ++t) {
+                        Vector3d dna_hat_nt = (1./n_a_norm) * dna_dx[n][t];
+                        Vector3d dna_hat_ms = (1./n_a_norm) * dna_dx[m][s];
+                        Vector3d dnb_hat_nt = (1./n_b_norm) * dnb_dx[n][t];
+                        Vector3d dnb_hat_ms = (1./n_b_norm) * dnb_dx[m][s];
+                        
+                        d2sin_theta_dxdx[m][s][n][t] = 
+                            ((1./n_a_norm) * d2na_dx[m][s][n][t].cross(n_b_hat)
+                          + (dna_hat_ms).cross(dnb_hat_nt)
+                          + (dna_hat_nt).cross(dnb_hat_ms)
+                          + (n_a_hat.cross((1./n_b_norm) * d2nb_dx[m][s][n][t]))).dot(e_hat)
+
+                          + (dna_hat_ms.cross(n_b_hat) + n_a_hat.cross(dnb_hat_ms)).dot((1./e_norm) * de_dx[n][t])
+                          + (dna_hat_nt.cross(n_b_hat) + n_a_hat.cross(dnb_hat_nt)).dot((1./e_norm) * de_dx[m][s]);
+
+                    }
+                }
+            }
+        }
+
+        double d2C_bend_dxdx[4][3][4][3];
+
+        for(int m = 0; m < 4; ++m) {
+            for(int s = 0; s < 3; ++s) {
+                for(int n = 0; n < 4; ++n) {
+                    for(int t = 0; t < 3; ++t) {
+                        d2C_bend_dxdx[m][s][n][t] = cos_theta * d2sin_theta_dxdx[m][s][n][t] - sin_theta * d2cos_theta_dxdx[m][s][n][t]
+                        + (sin_theta*sin_theta + cos_theta*cos_theta) * (dsin_theta_dx[m][s] * dcos_theta_dx[n][t] + dcos_theta_dx[m][s]*dsin_theta_dx[n][t])
+                        + 2*sin_theta*cos_theta*(dcos_theta_dx[m][s]*dcos_theta_dx[n][t] - dsin_theta_dx[m][s]*dsin_theta_dx[n][t]);
+                    }
+                }
+            }
+        }
+
+        MatrixXd bendDeriv(x.size(), x.size());
+        bendDeriv.setZero();
+
+
+        int p_[4] = {p0, p1, p2, p3};
+        for(int i = 0; i < 3; ++i) {
+            for(int j = 0; j < 3; ++j) {
+                Matrix3d C_built;
+                for(int k=0; k < 3; ++k) {
+                    for(int l = 0; l < 3; ++l) {
+                        C_built(k,l) = d2C_bend_dxdx[i][k][j][l];
+                    }
+                }
+                Matrix3d K = -kBend * dC_bend[i] * dC_bend[j].transpose() + C_built*C_bend;
+                bendDeriv.block<3,3>(3*p_[i], 3*p_[j]) = K;
+            }
+        }
+
+        dFdx += bendDeriv.sparseView();
 
     }
 

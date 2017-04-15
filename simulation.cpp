@@ -72,10 +72,44 @@ void Simulation::clearScene()
 
 
     //cloth
+    int vW = 6;
+    int vH = 6;
+    double spaceWidth = .5;
+    double spaceHeight = .5;
 
-    VectorXd clothVerts(3*4);
-    MatrixX3i clothFaces(2, 3);
-    clothFaces.row(0) = Vector3i(0, 1, 2);
+    VectorXd clothVerts(3*vW*vH);
+    MatrixX3i clothFaces((vW-1)*(vH-1) * 2, 3);
+    cout << "what" << endl;
+    for(int i = 0; i < vW; ++i) {
+        for(int j = 0; j < vH; ++j) {
+            Vector3d v(i*spaceWidth, j*spaceHeight, 0.);
+            clothVerts.segment<3>(3*vH*i + 3*j) = v;
+        }
+    }
+    int z = 0;
+    for(int i = 0; i < vW-1; ++i) {
+        for(int j = 0; j < vH-1;++j) {
+            int v0 = vH*i + j;
+            int v1 = vH*i + j+1;
+            int v2 = vH*(i+1) + j;
+            Vector3i face(v0, v2, v1);
+            clothFaces.row(z++) = face;
+            v0 = v1;
+            v1 = v2;
+            v2 = vH*(i+1) + j + 1;
+            Vector3i face2(v0, v1, v2);
+            clothFaces.row(z++) = face2;
+        }
+    }
+
+
+
+    cout << clothVerts << endl;
+
+    cout << clothFaces << endl;
+
+
+    /*clothFaces.row(0) = Vector3i(0, 1, 2);
     clothFaces.row(1) = Vector3i(1, 2, 3);
 
     clothVerts.segment<3>(0) = Vector3d(0., 0., 0.);
@@ -83,17 +117,16 @@ void Simulation::clearScene()
     clothVerts.segment<3>(6) = Vector3d(0., 1., 0.);
     clothVerts.segment<3>(9) = Vector3d(1., 1., 0.);
     
-    
+    */
     
 
     ClothTemplate *clothTemplate = new ClothTemplate(clothVerts, clothFaces, 1.);
 
     ClothInstance* clothInst = new ClothInstance(*clothTemplate, clothVerts);
 
-    clothInst->x.segment<3>(9) = Vector3d(1.2, 1., 0.);
-
     cloth_templates_.push_back(clothTemplate);
     cloths_.push_back(clothInst);
+    clothInst->x.segment<3>(0) = Vector3d(-.1, 0., 0.);
 
     renderLock_.unlock();
 }
@@ -182,11 +215,11 @@ void Simulation::takeSimulationStep()
         computeForce(q, oldq, F);
         v += params_.timeStep*Minv*F;*/
 
-        cloth->x += h * cloth->v;
-        cloth->v += h * invMass * F;
+        // cloth->x += h * cloth->v;
+        // cloth->v += h * invMass * F;
 
-        //cloth->x += h * (cloth->v + delta_v);
-        //cloth->v += delta_v;
+        cloth->x += h * (cloth->v + delta_v);
+        cloth->v += delta_v;
 
 
     }
