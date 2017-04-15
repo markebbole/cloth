@@ -4,8 +4,6 @@
 #include <iostream>
 #include <Eigen/Geometry>
 #include <QDebug>
-#include "rigidbodytemplate.h"
-#include "rigidbodyinstance.h"
 #include "clothtemplate.h"
 #include "clothinstance.h"
 #include "vectormath.h"
@@ -28,14 +26,14 @@ Simulation::Simulation(const SimParameters &params) : params_(params), time_(0)
 
 Simulation::~Simulation()
 {
-    for(vector<RigidBodyTemplate *>::iterator it = templates_.begin(); it != templates_.end(); ++it)
+    /*for(vector<RigidBodyTemplate *>::iterator it = templates_.begin(); it != templates_.end(); ++it)
     {
         delete *it;
     }
     for(vector<RigidBodyInstance *>::iterator it = bodies_.begin(); it != bodies_.end(); ++it)
     {
         delete *it;
-    }
+    }*/
 }
 
 void Simulation::initializeGL()
@@ -46,17 +44,17 @@ void Simulation::clearScene()
 {
     renderLock_.lock();
 
-    for(vector<RigidBodyTemplate *>::iterator it = templates_.begin(); it != templates_.end(); ++it)
+    /*for(vector<RigidBodyTemplate *>::iterator it = templates_.begin(); it != templates_.end(); ++it)
     {
         delete *it;
     }
     for(vector<RigidBodyInstance *>::iterator it = bodies_.begin(); it != bodies_.end(); ++it)
     {
         delete *it;
-    }
+    }*/
 
-    templates_.clear();
-    bodies_.clear();
+   // templates_.clear();
+   // bodies_.clear();
 
     // double testRadius = 1.;
     // RigidBodyTemplate *testTemplate = new RigidBodyTemplate(string("resources/sphere.tet"), testRadius);
@@ -77,12 +75,14 @@ void Simulation::clearScene()
     double spaceWidth = .5;
     double spaceHeight = .5;
 
+
+
     VectorXd clothVerts(3*vW*vH);
     MatrixX3i clothFaces((vW-1)*(vH-1) * 2, 3);
     cout << "what" << endl;
     for(int i = 0; i < vW; ++i) {
         for(int j = 0; j < vH; ++j) {
-            Vector3d v(i*spaceWidth, j*spaceHeight, 0.);
+            Vector3d v(i*spaceWidth, j*spaceHeight,0.);
             clothVerts.segment<3>(3*vH*i + 3*j) = v;
         }
     }
@@ -124,9 +124,20 @@ void Simulation::clearScene()
 
     ClothInstance* clothInst = new ClothInstance(*clothTemplate, clothVerts);
 
+
+
     cloth_templates_.push_back(clothTemplate);
     cloths_.push_back(clothInst);
-    clothInst->x.segment<3>(0) = Vector3d(-.1, 0., 0.);
+
+    double dx = -1;
+    double dy = 1.;
+    double dz = 0.;
+    for(int i = 0; i < (int)clothInst->x.size()/3; ++i) {
+        clothInst->x.segment<3>(3*i) = Vector3d(clothInst->x(3*i) + dx, clothInst->x(3*i+2) + dy, clothInst->x(3*i+1) + dz);
+    }
+
+    clothInst->x(3*15 + 1) += .2;
+    //clothInst->x.segment<3>(0) = Vector3d(-.1, 0., -.1);
 
     renderLock_.unlock();
 }
@@ -135,10 +146,10 @@ void Simulation::renderObjects()
 {
     if(renderLock_.tryLock())
     {
-        for(vector<RigidBodyInstance *>::iterator it = bodies_.begin(); it != bodies_.end(); ++it)
+        /*for(vector<RigidBodyInstance *>::iterator it = bodies_.begin(); it != bodies_.end(); ++it)
         {
             (*it)->render();
-        }
+        }*/
 
         for(vector<ClothInstance *>::iterator it = cloths_.begin(); it != cloths_.end(); ++it)
         {
@@ -288,7 +299,7 @@ void Simulation::takeSimulationStep()
     }
 }*/
 
-Eigen::Vector3d Simulation::getBodyPosition(int body)
+/*Eigen::Vector3d Simulation::getBodyPosition(int body)
 {
     if(body >= 0 && body < (int)bodies_.size())
         return bodies_[body]->c;
@@ -302,4 +313,4 @@ double Simulation::getBodyBoundingRadius(int body)
         return bodies_[body]->getTemplate().getBoundingRadius();
     }
     return 1.0;
-}
+}*/

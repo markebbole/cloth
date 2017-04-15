@@ -72,6 +72,8 @@ void Controller::simTick()
 
 void Controller::getCameraInfo(int body, Eigen::Vector3d &center, double &scale)
 {
-    center = sim_->getBodyPosition(body);
-    scale = 1.0 / sim_->getBodyBoundingRadius(body);
+    center = Vector3d(0., 0., 0.);
+    scale = 1.0;
+    /*center = sim_->getBodyPosition(body);
+    scale = 1.0 / sim_->getBodyBoundingRadius(body);*/
 }

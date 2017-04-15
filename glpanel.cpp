@@ -75,10 +75,11 @@ void GLPanel::paintGL()
     //eye[2] -= 5.0;
     c_.setCenter(eye);
     eye[2] = 5.;
-    Vector3d axis(0., rot, 0.);
+    Vector3d axis(-.1, 0., 0.);
     eye = VectorMath::rotationMatrix(axis) * eye;
     c_.setEye(eye);
     Vector3d up(0,1,0);
+    up = VectorMath::rotationMatrix(axis) * up;
     c_.setUp(up);
 
     glMatrixMode(GL_MODELVIEW);

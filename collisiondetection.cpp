@@ -1,6 +1,6 @@
 #include "collisiondetection.h"
-#include "rigidbodyinstance.h"
-#include "rigidbodytemplate.h"
+#include "clothinstance.h"
+#include "clothtemplate.h"
 #include <Eigen/Core>
 #include "vectormath.h"
 #include <Eigen/Geometry>
@@ -88,19 +88,21 @@ AABBNode *buildAABB(vector<AABBNode *> nodes)
     return node;
 }
 
-void refitAABB(const RigidBodyInstance * instance, AABBNode *node)
+void refitAABB(const ClothInstance * instance, AABBNode *node)
 {
-    if(node->childtet != -1)
+    if(node->childTriangle != -1)
     {
-        Eigen::Vector4i tet = instance->getTemplate().getTets().row(node->childtet);
+        Eigen::Vector3i tri = instance->getTemplate().getFaces().row(node->childTriangle);
         for(int k=0; k<3; k++)
         {
             node->box.mins[k] = numeric_limits<double>::infinity();
             node->box.maxs[k] = -numeric_limits<double>::infinity();
         }
-        for(int k=0; k<4; k++)
+        for(int k=0; k<3; k++)
         {
-            Eigen::Vector3d point = instance->c + VectorMath::rotationMatrix(instance->theta)*instance->getTemplate().getVerts().row(tet[k]).transpose();
+            Eigen::Vector3d point = instance->x.segment<3>(3*tri[k]);
+
+            //instance->c + VectorMath::rotationMatrix(instance->theta)*instance->getTemplate().getVerts().row(tet[k]).transpose();
             for(int l=0; l<3; l++)
             {
                 node->box.mins[l] = min(node->box.mins[l], point[l]);
@@ -120,24 +122,24 @@ void refitAABB(const RigidBodyInstance * instance, AABBNode *node)
     }
 }
 
-AABBNode *buildAABB(const RigidBodyInstance * instance)
+AABBNode *buildAABB(const ClothInstance * instance)
 {    
-    int ntets = (int)instance->getTemplate().getTets().rows();
-    vector<AABBNode *> leaves(ntets);
-    for(int j=0; j<ntets; j++)
+    int nTris = (int)instance->getTemplate().getFaces().rows();
+    vector<AABBNode *> leaves(nTris);
+    for(int j=0; j<nTris; j++)
     {
         AABBNode *leaf = new AABBNode;
-        leaf->childtet = j;
-        Eigen::Vector4i tet = instance->getTemplate().getTets().row(j);
+        leaf->childTriangle = j;
+        Eigen::Vector3i tri = instance->getTemplate().getFaces().row(j);
         BBox box;
         for(int k=0; k<3; k++)
         {
             box.mins[k] = numeric_limits<double>::infinity();
             box.maxs[k] = -numeric_limits<double>::infinity();
         }
-        for(int k=0; k<4; k++)
+        for(int k=0; k<3; k++)
         {
-            Eigen::Vector3d point = instance->c + VectorMath::rotationMatrix(instance->theta)*instance->getTemplate().getVerts().row(tet[k]).transpose();
+            Eigen::Vector3d point = instance->x.segment<3>(3*tri[k]);//instance->c + VectorMath::rotationMatrix(instance->theta)*instance->getTemplate().getVerts().row(tet[k]).transpose();
             for(int l=0; l<3; l++)
             {
                 box.mins[l] = min(box.mins[l], point[l]);
@@ -163,7 +165,7 @@ bool vertInTet(const Eigen::Vector3d &p, const Eigen::Vector3d &q1, const Eigen:
     return true;
 }
 
-void tetTetIntersect(const AABBNode *node1, const AABBNode *node2, int body1, int body2, const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
+/*void tetTetIntersect(const AABBNode *node1, const AABBNode *node2, int body1, int body2, const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
 {
     if(body1==body2)
         return;
@@ -198,9 +200,9 @@ void tetTetIntersect(const AABBNode *node1, const AABBNode *node2, int body1, in
             collisions.insert(c);
         }
     }
-}
+}*/
 
-void intersect(const AABBNode *node1, const AABBNode *node2, int body1, int body2, const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
+/*void intersect(const AABBNode *node1, const AABBNode *node2, int body1, int body2, const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
 {
     if(!node1 || !node2)
         return;
@@ -235,9 +237,17 @@ void intersect(const AABBNode *node1, const AABBNode *node2, int body1, int body
             intersect(node1->right, node2->right, body1, body2, instances, collisions);
         }
     }
+}*/
+
+
+void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
+    collisions.clear();
+    int nTris = (int)cloth->getTemplate().getFaces().rows();
+
+    //for()
 }
 
-void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
+/*void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
 {
     collisions.clear();
     int nbodies = (int)instances.size();
@@ -254,4 +264,4 @@ void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::s
             intersect(instances[i]->AABB, instances[j]->AABB, i, j, instances, collisions);
         }
     }
-}
+}*/

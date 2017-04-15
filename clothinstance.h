@@ -32,7 +32,7 @@ public:
 
     Eigen::Vector3d color;
 
-    //AABBNode *AABB;
+    AABBNode *AABB;
 
     const ClothTemplate &getTemplate() const {return ctemplate_;}
     void computeForces(VectorXd& F, SparseMatrix<double> dFdx, SparseMatrix<double> dFdv);

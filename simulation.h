@@ -10,8 +10,8 @@
 #include <QGLWidget>
 #include "distance.h"
 
-class RigidBodyTemplate;
-class RigidBodyInstance;
+// class RigidBodyTemplate;
+// class RigidBodyInstance;
 class ClothTemplate;
 class ClothInstance;
 
@@ -32,8 +32,8 @@ public:
     void renderObjects();
     void clearScene();    
 
-    Eigen::Vector3d getBodyPosition(int body);
-    double getBodyBoundingRadius(int body);
+    // Eigen::Vector3d getBodyPosition(int body);
+    // double getBodyBoundingRadius(int body);
 
     //double relativeVelocity(int, int, int, int);
     //Eigen::VectorXd calculateDG(int b1, int b2, int v, int b2TetIndex);
@@ -48,8 +48,8 @@ private:
 
     double time_;
 
-    std::vector<RigidBodyTemplate *> templates_;
-    std::vector<RigidBodyInstance *> bodies_;
+    //std::vector<RigidBodyTemplate *> templates_;
+    //std::vector<RigidBodyInstance *> bodies_;
 
     std::vector<ClothTemplate *> cloth_templates_;
     std::vector<ClothInstance *> cloths_;

@@ -5,7 +5,7 @@
 #include <set>
 #include <Eigen/Core>
 
-class RigidBodyInstance;
+class ClothInstance;
 
 struct BBox
 {
@@ -15,40 +15,63 @@ struct BBox
 
 struct AABBNode
 {
-    AABBNode() : left(NULL), right(NULL), childtet(-1) {}
+    AABBNode() : left(NULL), right(NULL), childTriangle(-1) {}
     ~AABBNode() {delete left; delete right;}
 
     AABBNode *left;
     AABBNode *right;
     BBox box;
-    int childtet;
+    int childTriangle;
 };
+
+// struct Collision
+// {
+//     int body1; // indices into the list of rigid body instances
+//     int body2;
+
+//     int collidingVertex; // index into body1's vertex list
+//     int collidingTet; // index into body2's tetrahedra list
+
+//     // constructed so that only one collision between a vertex and a rigid body will be kept (in case the vertex straddles multiple tets)
+//     bool operator<(const Collision &other) const
+//     {
+//         if(body1 < other.body1)
+//             return true;
+//         if(body1 > other.body1)
+//             return false;
+//         if(body2 < other.body2)
+//             return true;
+//         if(body2 > other.body2)
+//             return false;
+//         return (collidingVertex < other.collidingVertex);
+//     }
+// };
 
 struct Collision
 {
-    int body1; // indices into the list of rigid body instances
-    int body2;
+    int pointIndex;
+    int triIndex;
 
-    int collidingVertex; // index into body1's vertex list
-    int collidingTet; // index into body2's tetrahedra list
-
-    // constructed so that only one collision between a vertex and a rigid body will be kept (in case the vertex straddles multiple tets)
-    bool operator<(const Collision &other) const
+    bool operator<(const Collision& other) const
     {
-        if(body1 < other.body1)
+        if(pointIndex < other.pointIndex) {
             return true;
-        if(body1 > other.body1)
+        }
+
+        if(pointIndex > other.pointIndex) {
             return false;
-        if(body2 < other.body2)
-            return true;
-        if(body2 > other.body2)
-            return false;
-        return (collidingVertex < other.collidingVertex);
+        }
+
+        return triIndex < other.triIndex;
+
+
     }
+
 };
 
 bool vertInTet(const Eigen::Vector3d &p, const Eigen::Vector3d &q1, const Eigen::Vector3d &q2, const Eigen::Vector3d &q3, const Eigen::Vector3d &q4);
-void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions);
-AABBNode *buildAABB(const RigidBodyInstance * instance);
+void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions);
+//void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions);
+AABBNode *buildAABB(const ClothInstance * instance);
 
 #endif // COLLISIONDETECTION

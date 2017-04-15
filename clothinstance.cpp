@@ -8,13 +8,13 @@ ClothInstance::ClothInstance(const ClothTemplate &ctemplate, VectorXd x_init)
     color = Vector3d(1.0, 1.0, 1.0);
     v.resize(x_init.size());
     v.setZero();
-    //AABB = buildAABB(this);
+    AABB = buildAABB(this);
     time = 0;
 }
 
 ClothInstance::~ClothInstance()
 {
-    //delete AABB;
+    delete AABB;
 }
 
 void ClothInstance::render()
@@ -41,7 +41,7 @@ void ClothInstance::render()
         glMultMatrixd(xform);
         glScaled(1,1,1);*/
 
-        glBegin(GL_TRIANGLES);
+        
         const Eigen::MatrixX3i &faces = ctemplate_.getFaces();
         
         int nfaces = faces.rows();
@@ -58,13 +58,28 @@ void ClothInstance::render()
             //for(int j=0; j<3; j++)
             //{                
                 //glColor4d(normal[0]*normal[0], normal[1]*normal[1], normal[2]*normal[2],1.0);
+            glColor3f(1., 1., 1.);
+            glBegin(GL_TRIANGLES);
             glNormal3d(normal[0], normal[1], normal[2]);
             glVertex3d(p0[0], p0[1], p0[2]);
             glVertex3d(p1[0], p1[1], p1[2]);
             glVertex3d(p2[0], p2[1], p2[2]);
+            glEnd();
+
+            glLineWidth(1.5);
+            glColor3f(1., 0., 0.);
+            glBegin(GL_LINES);
+            glVertex3d(p0[0], p0[1], p0[2]);
+            glVertex3d(p1[0], p1[1], p1[2]);
+
+            glVertex3d(p1[0], p1[1], p1[2]);
+            glVertex3d(p2[0], p2[1], p2[2]);
+
+            glEnd();
+
             //}
         }
-        glEnd();
+        
     }
     glPopMatrix();
 }
@@ -80,16 +95,20 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
     //just gravity for right now.
     SparseMatrix<double> invMass = getTemplate().getInvMass();
     for(int i = 0; i < (int)x.size()/3; ++i) {
-        double m = 1. / invMass.coeffRef(3*i, 3*i);
-        F(3*i + 1) += -9.8*m;
+        double invM = invMass.coeffRef(3*i, 3*i);
+        if(invM > 0) {
+            double m = 1. / invMass.coeffRef(3*i, 3*i);
+            F(3*i + 1) += -13.8*m;
+        }
+       
     }
 
     //stretching force
     double kStretch = 1000.;
     double kShear = 100.;
 
-    double kBend = 0.00001;
-    double kDampStretch = 0.2;
+    double kBend = 0.00005;
+    double kDampStretch = 2;
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();
     Matrix3d I;
@@ -194,20 +213,10 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
             dC_shear_dx[z] = triArea * (dw_u_dx[z] * w_v + w_u * dw_v_dx[z]);
         }
 
-        // Vector3d dC_shear_dx0 = triArea * (dw_u_dx[0] * w_v + w_u * dw_v_dx[0]);
-        // Vector3d dC_shear_dx1 = triArea * (dw_u_dx[1] * w_v + w_u * dw_v_dx[1]);
-        // Vector3d dC_shear_dx2 = triArea * (dw_u_dx[2] * w_v + w_u * dw_v_dx[2]);
         double C_shear_dot = 0.;
         for(int z = 0; z < 3; ++z) {
             C_shear_dot += dC_shear_dx[z].dot(v.segment<3>(3*face[z]));
         }
-
-        // double C_shear_dot = dC_shear_dx0.dot(v.segment<3>(3*face[0]))
-        //     + dC_shear_dx1.dot(v.segment<3>(3*face[1]))
-        //     + dC_shear_dx2.dot(v.segment<3>(3*face[2]));
-
-        
-
 
         F.segment<3>(3*face[0]) += -kShear * dC_shear_dx[0] * C_shear;
         F.segment<3>(3*face[1]) += -kShear * dC_shear_dx[1] * C_shear;
@@ -225,6 +234,11 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
         shearDeriv.setZero();
 
         Matrix3d K_shear[3][3];
+
+        MatrixXd shearDampDerivDX(x.size(), x.size());
+        shearDampDerivDX.setZero();
+        MatrixXd shearDampDerivDV(x.size(), x.size());
+        shearDampDerivDV.setZero();
         for(int z=0; z<3;++z) {
             for(int zz=0; zz<3; ++zz) {
                 double c = triArea * (dw_u_dx[z] * dw_v_dx[zz] + dw_u_dx[zz] * dw_v_dx[z]);
@@ -232,14 +246,16 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
 
                 K_shear[z][zz] = -kShear * (dC_shear_dx[z] * dC_shear_dx[zz].transpose() + C * C_shear);
                 shearDeriv.block<3,3>(3*face[z], 3*face[zz]) = K_shear[z][zz];
+
+                shearDampDerivDX.block<3,3>(3*face[z], 3*face[zz]) = -kDampStretch*C*C_shear_dot;
+                shearDampDerivDV.block<3,3>(3*face[z], 3*face[zz]) = -kDampStretch*dC_shear_dx[z]*dC_shear_dx[zz].transpose();
+
             }
         }
 
-
-
         dFdx += shearDeriv.sparseView();
-
-
+        dFdx += shearDampDerivDX.sparseView();
+        dFdv += shearDampDerivDV.sparseView();
 
         //computeShearForce(F, dFdx, dFdv);
 
@@ -265,15 +281,6 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
             }
         }
         
-        /*Matrix3d K_00 = -kStretch * (dC_dx0 * dC_dx0.transpose() + (d2C_u_00 * C_stretch(0) + d2C_v_00 * C_stretch(1)));
-        Matrix3d K_11 = -kStretch * (dC_dx1 * dC_dx1.transpose() + (d2C_u_11 * C_stretch(0) + d2C_v_11 * C_stretch(1)));
-        Matrix3d K_22 = -kStretch * (dC_dx2 * dC_dx2.transpose() + (d2C_u_22 * C_stretch(0) + d2C_v_22 * C_stretch(1)));
-
-        Matrix3d K_10 = -kStretch * (dC_dx1 * dC_dx0.transpose() + (d2C_u_10 * C_stretch(0) + d2C_v_10 * C_stretch(1)));
-        Matrix3d K_20 = -kStretch * (dC_dx2 * dC_dx0.transpose() + (d2C_u_20 * C_stretch(0) + d2C_v_20 * C_stretch(1)));
-        Matrix3d K_21 = -kStretch * (dC_dx2 * dC_dx1.transpose() + (d2C_u_21 * C_stretch(0) + d2C_v_21 * C_stretch(1)));
-        */
-        // cout << "YOOO 5" << endl;
         //00
         MatrixXd springDeriv(x.size(), x.size());
         springDeriv.setZero();
@@ -287,18 +294,7 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
                 springDampDerivDV.block<3,3>(3*face[z], 3*face[zz]) = -kDampStretch * (dC_dx[z]*dC_dx[zz].transpose());
             }
         }
-        // springDeriv.block<3,3>(3*face[0], 3*face[0]) = K_00;
-        // springDeriv.block<3,3>(3*face[1], 3*face[1]) = K_11;
-        // springDeriv.block<3,3>(3*face[2], 3*face[2]) = K_22;
 
-        // // cout << "YOO 6" << endl;
-        // springDeriv.block<3,3>(3*face[1], 3*face[0]) = K_10;
-        // springDeriv.block<3,3>(3*face[2], 3*face[0]) = K_20;
-        // springDeriv.block<3,3>(3*face[2], 3*face[1]) = K_21;
-        // springDeriv.block<3,3>(3*face[0], 3*face[0]) = K_10.transpose();
-        // springDeriv.block<3,3>(3*face[0], 3*face[2]) = K_20.transpose();
-        // springDeriv.block<3,3>(3*face[1], 3*face[2]) = K_21.transpose();
-        // cout << "Yooo 7" << endl;
         dFdx += springDeriv.sparseView();
         dFdx += springDampDeriv.sparseView();
         dFdv += springDampDerivDV.sparseView();
@@ -363,9 +359,6 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
 
 
         Vector4d q_e(0,1,-1,0);
-
-
-
 
         //eq 31
         Vector3d dna_dx[4][3];
@@ -550,11 +543,41 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
             }
         }
 
+
+
         MatrixXd bendDeriv(x.size(), x.size());
         bendDeriv.setZero();
 
+        MatrixXd bendDampDerivDX(x.size(), x.size());
+        bendDampDerivDX.setZero();
+
+        MatrixXd bendDampDerivDV(x.size(), x.size());
+        bendDampDerivDV.setZero();
+
 
         int p_[4] = {p0, p1, p2, p3};
+
+
+        double dC_bend_dt = 0.;
+        
+        for(int z = 0; z < 4; ++z) {
+            dC_bend_dt += dC_bend[z].dot(v.segment<3>(3*p_[z]));
+        }
+
+
+        Vector3d F_bend_damp_0 = -kBend * dC_bend_0 * dC_bend_dt;
+        Vector3d F_bend_damp_1 = -kBend * dC_bend_1 * dC_bend_dt;
+        Vector3d F_bend_damp_2 = -kBend * dC_bend_2 * dC_bend_dt;
+        Vector3d F_bend_damp_3 = -kBend * dC_bend_3 * dC_bend_dt;
+
+        F.segment<3>(3*p0) += F_bend_damp_0;
+        F.segment<3>(3*p1) += F_bend_damp_1;
+        F.segment<3>(3*p2) += F_bend_damp_2;
+        F.segment<3>(3*p3) += F_bend_damp_3;
+
+
+
+
         for(int i = 0; i < 3; ++i) {
             for(int j = 0; j < 3; ++j) {
                 Matrix3d C_built;
@@ -565,10 +588,16 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
                 }
                 Matrix3d K = -kBend * dC_bend[i] * dC_bend[j].transpose() + C_built*C_bend;
                 bendDeriv.block<3,3>(3*p_[i], 3*p_[j]) = K;
+                bendDampDerivDX.block<3,3>(3*p_[i], 3*p_[j]) = -kDampStretch * C_built * dC_bend_dt;
+                bendDampDerivDV.block<3,3>(3*p_[i], 3*p_[j]) = -kDampStretch * dC_bend[i] * dC_bend[j].transpose();
+
             }
         }
 
         dFdx += bendDeriv.sparseView();
+        dFdx += bendDampDerivDX.sparseView();
+        dFdv += bendDampDerivDV.sparseView();
+
 
     }
 
