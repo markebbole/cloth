@@ -175,22 +175,15 @@ void Simulation::takeSimulationStep()
         VectorXd F(cloth->x.size());
         SparseMatrix<double> dFdx(cloth->x.size(), cloth->x.size());
         dFdx.setZero();
+        SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
+        dFdv.setZero();
 
-        vector< Tr > dFdx_coeffs;
-        vector< Tr > dFdv_coeffs;
 
         F.setZero();
 
-        cloth->computeForces(F, dFdx, dFdv_coeffs);
+        cloth->computeForces(F, dFdx, dFdv);
         double h = params_.timeStep;
         SparseMatrix<double> invMass = cloth->getTemplate().getInvMass();
-
-        //SparseMatrix<double> dFdx(cloth->x.size(), cloth->x.size());
-        //dFdx.setFromTriplets(dFdx_coeffs.begin(), dFdx_coeffs.end());
-
-        SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
-        dFdv.setFromTriplets(dFdv_coeffs.begin(), dFdv_coeffs.end());
-
 
         //delta v update
         SparseMatrix<double> I(cloth->x.size(), cloth->x.size());
