@@ -91,7 +91,7 @@ void ClothInstance::computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, ve
 
 
 
-void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, SparseMatrix<double> dFdv) {
+void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv) {
     //just gravity for right now.
     SparseMatrix<double> invMass = getTemplate().getInvMass();
     for(int i = 0; i < (int)x.size()/3; ++i) {
@@ -107,7 +107,7 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
     double kStretch = 1000.;
     double kShear = 100.;
 
-    double kBend = 0.00005;
+    double kBend = 0.00001;
     double kDampStretch = 2;
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();
@@ -565,10 +565,10 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
         }
 
 
-        Vector3d F_bend_damp_0 = -kBend * dC_bend_0 * dC_bend_dt;
-        Vector3d F_bend_damp_1 = -kBend * dC_bend_1 * dC_bend_dt;
-        Vector3d F_bend_damp_2 = -kBend * dC_bend_2 * dC_bend_dt;
-        Vector3d F_bend_damp_3 = -kBend * dC_bend_3 * dC_bend_dt;
+        Vector3d F_bend_damp_0 = -kDampStretch * dC_bend_0 * dC_bend_dt;
+        Vector3d F_bend_damp_1 = -kDampStretch * dC_bend_1 * dC_bend_dt;
+        Vector3d F_bend_damp_2 = -kDampStretch * dC_bend_2 * dC_bend_dt;
+        Vector3d F_bend_damp_3 = -kDampStretch * dC_bend_3 * dC_bend_dt;
 
         F.segment<3>(3*p0) += F_bend_damp_0;
         F.segment<3>(3*p1) += F_bend_damp_1;
@@ -578,8 +578,8 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double> dFdx, Sparse
 
 
 
-        for(int i = 0; i < 3; ++i) {
-            for(int j = 0; j < 3; ++j) {
+        for(int i = 0; i < 4; ++i) {
+            for(int j = 0; j < 4; ++j) {
                 Matrix3d C_built;
                 for(int k=0; k < 3; ++k) {
                     for(int l = 0; l < 3; ++l) {

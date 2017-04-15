@@ -35,7 +35,7 @@ public:
     AABBNode *AABB;
 
     const ClothTemplate &getTemplate() const {return ctemplate_;}
-    void computeForces(VectorXd& F, SparseMatrix<double> dFdx, SparseMatrix<double> dFdv);
+    void computeForces(VectorXd& F, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
 
 private:
     void computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, vector < Tr > & dFdv);
