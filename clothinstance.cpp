@@ -107,7 +107,7 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
     double kStretch = 1000.;
     double kShear = 100.;
 
-    double kBend = 0.00001;
+    double kBend = 0.00005;
     double kDampStretch = 2;
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();
