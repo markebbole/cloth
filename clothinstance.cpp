@@ -597,8 +597,6 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
         dFdx += bendDeriv.sparseView();
         dFdx += bendDampDerivDX.sparseView();
         dFdv += bendDampDerivDV.sparseView();
-
-
     }
 
 }

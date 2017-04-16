@@ -239,12 +239,79 @@ bool vertInTet(const Eigen::Vector3d &p, const Eigen::Vector3d &q1, const Eigen:
     }
 }*/
 
+void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIndex, Vector3d point, std::set<Collision> &collisions) {
+    Vector3i tri = cloth->getTemplate().getFaces().row(triangleIndex);
+    Vector3d x1 = cloth->x.segment<3>(3*tri[0]);
+    Vector3d x2 = cloth->x.segment<3>(3*tri[1]);
+    Vector3d x3 = cloth->x.segment<3>(3*tri[2]);
+    
+    Vector3d vec_43 = point - x3;
+    Vector3d n_hat = (x3-x1).cross(x2-x1).normalized();
+
+    if(abs(vec_43.dot(n_hat)) < .05) {
+        double m11 = (x1-x3).dot(x1-x3);
+        double m21 = (x1-x3).dot(x2-x3);
+        double m12 = (x1-x3).dot(x2-x3);
+        double m22 = (x2-x3).dot(x2-x3);
+        Matrix2d M;
+        M << m11, m12, m21, m22;
+
+        Vector2d A((x1-x3).dot(x4-x3), (x2-x3).dot(x4-x3));
+
+        Vector2d w = M.inverse() * A;
+        double w3 = 1. - w(0) - w(1);
+        //.1 should be replaced with characteristic length of triangle. sqrt of area?
+        if(w(0) >= -.1 && w(0) <= 1 + .1 && w(1) >= -.1 && w(1) <= 1 + .1 && w3 >= -.1 && w3 <= 1+.1) {
+            Collision c;
+            c.pointIndex = pointIndex;
+            c.triIndex = triangleIndex;
+            collisions.insert(c);
+        }
+    }
+}
+
+void pointTest(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& pointBox, std::set<Collision> &collisions) {
+    int nTris = (int)cloth->getTemplate().getFaces().rows();
+
+    Vector3d point = cloth->x.segment<3>(3*pIndex);
+
+    if(!clothNode) {
+        return;
+    }
+
+    if(!intersects(clothNode->box, pointBox)) {
+        return;
+    }
+
+    //leaf node
+    if(clothNode->childTriangle != -1) {
+        Vector3i tri = cloth->getTemplate().getFaces().row(clothNode->childTriangle);
+        if(tri[0] == pIndex || tri[1] == pIndex || tri[2] == pIndex) {
+            return;
+        }
+
+        pointTriangleProximity(cloth, clothNode->childTriangle, pIndex, point, collisions);
+    } else {
+        pointTest(cloth, clothNode->left, pIndex, pointBox, collisions);
+        pointTest(cloth, clothNode->right, pIndex, pointBox, collisions);
+    }
+
+}
 
 void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
     collisions.clear();
-    int nTris = (int)cloth->getTemplate().getFaces().rows();
+    int nPoints = (int)cloth->getTemplate().getVerts().size();
 
-    //for()
+    refitAABB(cloth, cloth->AABB);
+
+    for(int i = 0; i < nPoints; ++i) {
+        Vector3d p = cloth->getTemplate().getVerts().segment<3>(3*i);
+        BBox pointBox;
+        pointBox.mins = p - Vector3d(.01, .01, .01);
+        pointBox.maxs = p + Vector3d(.01, .01, .01);
+
+        pointTest(cloth->AABB, i, pointBox, collisions);
+    }
 }
 
 /*void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
