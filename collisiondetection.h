@@ -51,6 +51,9 @@ struct Collision
 {
     int pointIndex;
     int triIndex;
+    Eigen::Vector3d n_hat;
+    Eigen::Vector3d bary;
+    double rel_velocity;
 
     bool operator<(const Collision& other) const
     {

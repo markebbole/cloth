@@ -41,6 +41,22 @@ void ClothInstance::render()
         glMultMatrixd(xform);
         glScaled(1,1,1);*/
 
+        AABBNode* aabb = AABB;
+
+        //do {
+            BBox b = aabb->box;
+
+            glLineWidth(1.);
+            glColor3f(1., 1., 0.);
+            glBegin(GL_LINES);
+            glVertex3d(b.mins[0], b.mins[1], b.mins[2]);
+            glVertex3d(b.maxs[0], b.maxs[1], b.maxs[2]);
+
+            glEnd();
+
+
+        //} while(aabb->childTriangle != -1);
+
         
         const Eigen::MatrixX3i &faces = ctemplate_.getFaces();
         
@@ -104,10 +120,10 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
     }
 
     //stretching force
-    double kStretch = 1000.;
-    double kShear = 100.;
+    double kStretch = 800.;
+    double kShear = 50.;
 
-    double kBend = 0.00005;
+    double kBend = 0.00001;
     double kDampStretch = 2;
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();

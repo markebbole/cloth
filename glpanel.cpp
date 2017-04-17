@@ -74,7 +74,7 @@ void GLPanel::paintGL()
     //c_.setEye(eye);
     //eye[2] -= 5.0;
     c_.setCenter(eye);
-    eye[2] = 5.;
+    eye[2] = 7.;
     Vector3d axis(-.1, 0., 0.);
     eye = VectorMath::rotationMatrix(axis) * eye;
     c_.setEye(eye);
