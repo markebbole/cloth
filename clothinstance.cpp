@@ -61,6 +61,10 @@ void ClothInstance::render()
         const Eigen::MatrixX3i &faces = ctemplate_.getFaces();
         
         int nfaces = faces.rows();
+        VectorXd templateVerts = getTemplate().getVerts();
+        double maxX = templateVerts(templateVerts.size()-3);
+        double maxY = templateVerts(templateVerts.size()-2);
+
         for(int i=0; i<nfaces; i++)
         {
             Vector3i face = faces.row(i);
@@ -74,11 +78,20 @@ void ClothInstance::render()
             //for(int j=0; j<3; j++)
             //{                
                 //glColor4d(normal[0]*normal[0], normal[1]*normal[1], normal[2]*normal[2],1.0);
-            glColor3f(1., 1., 1.);
+
             glBegin(GL_TRIANGLES);
             glNormal3d(normal[0], normal[1], normal[2]);
+            double xval = templateVerts.segment<3>(3*face[0])[0];
+            double yval = templateVerts.segment<3>(3*face[0])[1];
+            glColor3f(xval, yval, 1.);
             glVertex3d(p0[0], p0[1], p0[2]);
+            xval = templateVerts.segment<3>(3*face[1])[0];
+            yval = templateVerts.segment<3>(3*face[1])[1];
+            glColor3f(xval, yval, 1.);
             glVertex3d(p1[0], p1[1], p1[2]);
+            xval = templateVerts.segment<3>(3*face[2])[0];
+            yval = templateVerts.segment<3>(3*face[2])[1];
+            glColor3f(xval, yval, 1.);
             glVertex3d(p2[0], p2[1], p2[2]);
             glEnd();
 
@@ -217,8 +230,8 @@ void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<do
         F_d.segment<3>(3*face[1]) += F_damp1;
         F_d.segment<3>(3*face[2]) += F_damp2;
 
-        cout << "F_D AFTER STRETCH: " << endl;
-        cout << F_d << endl;
+        // cout << "F_D AFTER STRETCH: " << endl;
+        // cout << F_d << endl;
 
 
         //dFdx damping
@@ -245,8 +258,8 @@ void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<do
         F_d.segment<3>(3*face[1]) += -kDampStretch * dC_shear_dx[1] * C_shear_dot;
         F_d.segment<3>(3*face[2]) += -kDampStretch * dC_shear_dx[2] * C_shear_dot;
 
-        cout << "F_D AFTER SHEAR: " << endl;
-        cout << F_d << endl;
+        // cout << "F_D AFTER SHEAR: " << endl;
+        // cout << F_d << endl;
 
         Matrix3d I;
         I.setIdentity();
@@ -596,8 +609,7 @@ void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<do
         F_d.segment<3>(3*p2) += F_bend_damp_2;
         F_d.segment<3>(3*p3) += F_bend_damp_3;
 
-        cout << "F_D AFTER BEND: " << endl;
-        cout << F_d << endl;
+        
 
 
         for(int i = 0; i < 4; ++i) {

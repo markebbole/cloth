@@ -123,7 +123,7 @@ void Simulation::clearScene()
     */
     
 
-    ClothTemplate *clothTemplate = new ClothTemplate(clothVerts, clothFaces, 1.);
+    ClothTemplate *clothTemplate = new ClothTemplate(clothVerts, clothFaces, 1);
 
     ClothInstance* clothInst = new ClothInstance(*clothTemplate, clothVerts);
 
@@ -318,8 +318,8 @@ void Simulation::takeSimulationStep()
 
         cloth->v = vn_plus_1;
 
-        cout << "CLOTH V AFTER APPLYING UPDATE: " << endl;
-        cout << cloth->v << endl;
+        // cout << "CLOTH V AFTER APPLYING UPDATE: " << endl;
+        // cout << cloth->v << endl;
 
         // cloth->x += h * (cloth->v + delta_v);
         // cloth->v += delta_v;
