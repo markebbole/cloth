@@ -70,8 +70,8 @@ void Simulation::clearScene()
 
 
     //cloth
-    int vW = 6;
-    int vH = 6;
+    int vW = 10;
+    int vH = 10;
     double spaceWidth = .5;
     double spaceHeight = .5;
 
@@ -134,7 +134,7 @@ void Simulation::clearScene()
 
     double dx = -1;
     double dy = 1.;
-    double dz = 0.;
+    double dz = -.3;
     for(int i = 0; i < (int)clothInst->x.size()/3; ++i) {
         clothInst->x.segment<3>(3*i) = Vector3d(clothInst->x(3*i) + dx, clothInst->x(3*i+2) + dy, clothInst->x(3*i+1) + dz);
     }
@@ -199,7 +199,11 @@ void Simulation::takeSimulationStep()
         F_el.setZero();
         F_d.setZero();
 
+        // cout << "dFdx bbefore" << dFdx << endl;
+
         cloth->computeForces(F_el, F_d, dFdx, dFdv);
+
+        // cout << F_el << F_d << dFdx << dFdv << endl;
 
         VectorXd F = F_el + F_d;
 
@@ -212,9 +216,12 @@ void Simulation::takeSimulationStep()
         double h = params_.timeStep;
         SparseMatrix<double> invMass = cloth->getTemplate().getInvMass();
 
+
         //delta v update
         SparseMatrix<double> I(cloth->x.size(), cloth->x.size());
         I.setIdentity();
+
+        //cout << I << endl;
 
         //SparseMatrix<double> invMass = cloth->getTemplate().getInvMass();
 
@@ -298,31 +305,33 @@ void Simulation::takeSimulationStep()
        
         
 
+        
+
+        
+
+        // cloth->x = prevX + params_.timeStep * candidateV;
+        // cloth->v = candidateV;
+        // cloth->computeForces(F_el, F_d, dFdx, dFdv);
         // F_el.setZero();
         // F_d.setZero();
         // dFdx.setZero();
         // dFdv.setZero();
 
-        // cloth->computeForces(F_el, F_d, dFdx, dFdv);
+        // SparseMatrix<double> L = I - h/2. * invMass * dFdv;
 
-        cloth->x = prevX + params_.timeStep * candidateV;
+        // VectorXd RHS = candidateV + h/2. * invMass * F_el;
 
+        // solver.compute(L);
 
-        SparseMatrix<double> L = I - h/2. * invMass * dFdv;
+        // VectorXd vn_plus_1 = solver.solve(RHS);
 
-        VectorXd RHS = candidateV + h/2. * invMass * F_el;
-
-        solver.compute(L);
-
-        VectorXd vn_plus_1 = solver.solve(RHS);
-
-        cloth->v = vn_plus_1;
+        // cloth->v = vn_plus_1;
 
         // cout << "CLOTH V AFTER APPLYING UPDATE: " << endl;
         // cout << cloth->v << endl;
 
-        // cloth->x += h * (cloth->v + delta_v);
-        // cloth->v += delta_v;
+        cloth->x += h * (cloth->v + delta_v);
+        cloth->v += delta_v;
 
     }
 

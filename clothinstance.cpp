@@ -136,8 +136,8 @@ void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<do
     double kStretch = 1000.;
     double kShear = 100.;
 
-    double kBend = 0.000003;
-    double kDampStretch = 1;
+    double kBend = 0.000001;
+    double kDampStretch = .1;
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();
     Matrix3d I;
@@ -271,6 +271,7 @@ void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<do
 
         MatrixXd shearDampDerivDX(x.size(), x.size());
         shearDampDerivDX.setZero();
+
         MatrixXd shearDampDerivDV(x.size(), x.size());
         shearDampDerivDV.setZero();
         for(int z=0; z<3;++z) {
@@ -320,7 +321,11 @@ void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<do
         springDeriv.setZero();
 
         MatrixXd springDampDeriv(x.size(), x.size());
+        springDampDeriv.setZero();
+
         MatrixXd springDampDerivDV(x.size(), x.size());
+        springDampDerivDV.setZero();
+
         for(int z=0; z < 3; ++z) {
             for(int zz=0; zz<3; ++zz) {
                 springDeriv.block<3,3>(3*face[z], 3*face[zz]) = K_stretch[z][zz];
