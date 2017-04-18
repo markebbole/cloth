@@ -79,6 +79,9 @@ void Simulation::clearScene()
 
     VectorXd clothVerts(3*vW*vH);
     MatrixX3i clothFaces((vW-1)*(vH-1) * 2, 3);
+
+    cout << clothFaces.rows() << endl;
+
     cout << "what" << endl;
     for(int i = 0; i < vW; ++i) {
         for(int j = 0; j < vH; ++j) {
@@ -136,7 +139,7 @@ void Simulation::clearScene()
         clothInst->x.segment<3>(3*i) = Vector3d(clothInst->x(3*i) + dx, clothInst->x(3*i+2) + dy, clothInst->x(3*i+1) + dz);
     }
 
-    clothInst->x(3*15 + 1) += .2;
+    //clothInst->x(3*15 + 1) += .2;
     //clothInst->x.segment<3>(0) = Vector3d(-.1, 0., -.1);
 
     clothInst->AABB = buildAABB(clothInst);
@@ -185,16 +188,27 @@ void Simulation::takeSimulationStep()
 
         ClothInstance *cloth = *it;
 
-        VectorXd F(cloth->x.size());
+        VectorXd F_el(cloth->x.size());
+        VectorXd F_d(cloth->x.size());
         SparseMatrix<double> dFdx(cloth->x.size(), cloth->x.size());
         dFdx.setZero();
         SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
         dFdv.setZero();
 
 
-        F.setZero();
+        F_el.setZero();
+        F_d.setZero();
 
-        cloth->computeForces(F, dFdx, dFdv);
+        cloth->computeForces(F_el, F_d, dFdx, dFdv);
+
+        VectorXd F = F_el + F_d;
+
+        // cout << "F_D: " << endl;
+        // cout << F_d << endl;
+
+        // cout << "F_EL: " << endl;
+        // cout << F_el << endl;
+
         double h = params_.timeStep;
         SparseMatrix<double> invMass = cloth->getTemplate().getInvMass();
 
@@ -227,9 +241,10 @@ void Simulation::takeSimulationStep()
 
         set<Collision> collisions;
 
-        selfCollisions(cloth, collisions);
+        //selfCollisions(cloth, collisions);
 
         VectorXd prevX = cloth->x;
+        VectorXd prevV = cloth->v;
 
         VectorXd candidateX = cloth->x + h * (cloth->v + delta_v);
 
@@ -241,54 +256,73 @@ void Simulation::takeSimulationStep()
             cout << collisions.size() << endl;
         }
 
-        for(auto it = collisions.begin(); it != collisions.end(); ++it) {
-            Collision coll = *it;
-            double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
-            double magPoint = 0.;
-            Vector3d n_hat = coll.n_hat;
-            double m = 1.;
-            if(invMPoint > 0) {
-                //m = 1. / invMPoint;
-                magPoint = m * coll.rel_velocity / 2.;
+        // for(auto it = collisions.begin(); it != collisions.end(); ++it) {
+        //     Collision coll = *it;
+        //     double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
+        //     double magPoint = 0.;
+        //     Vector3d n_hat = coll.n_hat;
+        //     double m = 1.;
+        //     if(invMPoint > 0) {
+        //         m = 1. / invMPoint;
+        //         magPoint = m * coll.rel_velocity / 2.;
 
-            }
+        //     }
 
-            double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
-
-
-            Vector3i tri = cloth->getTemplate().getFaces().row(coll.triIndex);
-            // cloth->v.segment<3>(3*tri[0]) += coll.bary(0) * (magTri / m) * n_hat;
-            // cloth->v.segment<3>(3*tri[1]) += coll.bary(1) * (magTri / m) * n_hat;
-            // cloth->v.segment<3>(3*tri[2]) += coll.bary(2) * (magTri / m) * n_hat;
-            candidateV.segment<3>(3*coll.pointIndex) -= (magPoint / m) * n_hat;
-            double d = .05 - (cloth->x.segment<3>(3*coll.pointIndex) 
-                - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
-                - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
-                - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
-
-            // double I_r_mag = -min(params_.timeStep * 1000. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
-            // double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
-            // cloth->v.segment<3>(3*tri[0]) += coll.bary(0) * (I_r_mag_interp / m) * n_hat;
-            // cloth->v.segment<3>(3*tri[1]) += coll.bary(1) * (I_r_mag_interp / m) * n_hat;
-            // cloth->v.segment<3>(3*tri[2]) += coll.bary(2) * (I_r_mag_interp / m) * n_hat;
-            // cloth->v.segment<3>(3*coll.pointIndex) -= (I_r_mag_interp / m) * n_hat;
-        }
+        //     double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
 
 
+        //     Vector3i tri = cloth->getTemplate().getFaces().row(coll.triIndex);
+        //     candidateV.segment<3>(3*tri[0]) += coll.bary(0) * (magTri / m) * n_hat;
+        //     candidateV.segment<3>(3*tri[1]) += coll.bary(1) * (magTri / m) * n_hat;
+        //     candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (magTri / m) * n_hat;
+
+        //     candidateV.segment<3>(3*coll.pointIndex) -= (magTri / m) * n_hat;
+        //     double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
+        //         - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
+        //         - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
+        //         - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
+
+        //     double I_r_mag = -min(params_.timeStep * 900. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
+        //     double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+        //     candidateV.segment<3>(3*tri[0]) += coll.bary(0) * (I_r_mag_interp / m) * n_hat;
+        //     candidateV.segment<3>(3*tri[1]) += coll.bary(1) * (I_r_mag_interp / m) * n_hat;
+        //     candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (I_r_mag_interp / m) * n_hat;
+        //     candidateV.segment<3>(3*coll.pointIndex) -= (I_r_mag_interp / m) * n_hat;
+        // }
+
+         //candidateV is v^(i+1/2)
+
+
+        
+
+       
+        
+
+        // F_el.setZero();
+        // F_d.setZero();
+        // dFdx.setZero();
+        // dFdv.setZero();
+
+        // cloth->computeForces(F_el, F_d, dFdx, dFdv);
 
         cloth->x = prevX + params_.timeStep * candidateV;
-        cloth->x += h * (cloth->v + delta_v);
-        cloth->v += delta_v;
 
 
-        
+        SparseMatrix<double> L = I - h/2. * invMass * dFdv;
 
+        VectorXd RHS = candidateV + h/2. * invMass * F_el;
 
-        
+        solver.compute(L);
 
+        VectorXd vn_plus_1 = solver.solve(RHS);
 
-        
+        cloth->v = vn_plus_1;
 
+        cout << "CLOTH V AFTER APPLYING UPDATE: " << endl;
+        cout << cloth->v << endl;
+
+        // cloth->x += h * (cloth->v + delta_v);
+        // cloth->v += delta_v;
 
     }
 

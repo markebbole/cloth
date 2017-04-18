@@ -63,8 +63,8 @@ void ClothTemplate::init() {
 
 	for(auto it = edgesToFaces.begin(); it != edgesToFaces.end(); ++it) {
 		std::pair<epair, vector< int >> p = *it;
-		cout << "edge: " << p.first.a << " " << p.first.b << endl;
-		cout << p.second.size() << endl;
+		// cout << "edge: " << p.first.a << " " << p.first.b << endl;
+		// cout << p.second.size() << endl;
 		if(p.second.size() > 1) {
 			Vector4i faceinfo(p.first.a, p.first.b, p.second[0], p.second[1]);
 			//std::pair<Vector3i, Vector3i> connectedFaces(p.second[0], p.second[1]);
@@ -76,6 +76,7 @@ void ClothTemplate::init() {
 		Minvcoeffs.push_back(Tr(3*i,   3*i,   1./masses(i)));
 		Minvcoeffs.push_back(Tr(3*i+1,   3*i+1,   1./masses(i)));
 		Minvcoeffs.push_back(Tr(3*i+2,   3*i+2,   1./masses(i)));
+		cout << masses(i) << endl;
 	}
 
 	invMass.setFromTriplets(Minvcoeffs.begin(), Minvcoeffs.end());

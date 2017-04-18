@@ -257,7 +257,7 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
     Vector3d pointVelocity = cloth->v.segment<3>(3*pointIndex);
 
 
-    if(abs(vec_43.dot(n_hat)) < .05) {
+    if(abs(vec_43.dot(n_hat)) < .1) {
         double m11 = (x1-x3).dot(x1-x3);
         double m21 = (x1-x3).dot(x2-x3);
         double m12 = (x1-x3).dot(x2-x3);
@@ -270,7 +270,8 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
         Vector2d w = M.inverse() * A;
         double w3 = 1. - w(0) - w(1);
         //.1 should be replaced with characteristic length of triangle. sqrt of area?
-        if(w(0) >= -.1 && w(0) <= 1 + .1 && w(1) >= -.1 && w(1) <= 1 + .1 && w3 >= -.1 && w3 <= 1+.1) {
+        double sqrtarea = sqrt(abs((x2-x1).cross(x3-x1).norm())/2.);
+        if(w(0) >= -sqrtarea && w(0) <= 1 + sqrtarea && w(1) >= -sqrtarea && w(1) <= 1 + sqrtarea && w3 >= -sqrtarea && w3 <= 1+sqrtarea) {
             Vector3d triPointVel = w(0) * v1 + w(1) * v2 + w3 * v3;
 
             double rel_velocity = n_hat.dot(pointVelocity - triPointVel);
@@ -305,13 +306,13 @@ void pointTest(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& poin
     //leaf node
     if(clothNode->childTriangle != -1) {
 
-        //cout << "got to leaf" << endl;
+        cout << "got to leaf" << endl;
         Vector3i tri = cloth->getTemplate().getFaces().row(clothNode->childTriangle);
         if(tri[0] == pIndex || tri[1] == pIndex || tri[2] == pIndex) {
             return;
         }
 
-        //cout << "different triangle" << endl;
+        cout << "different triangle" << endl;
 
         pointTriangleProximity(cloth, clothNode->childTriangle, pIndex, point, collisions);
     } else {
@@ -330,12 +331,12 @@ void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
     for(int i = 0; i < nPoints; ++i) {
         Vector3d p = cloth->x.segment<3>(3*i);
         BBox pointBox;
-        Vector3d diff = p - Vector3d(.01, .01, .01);
+        Vector3d diff = p - Vector3d(.05, .05, .05);
         pointBox.mins[0] = diff[0];
         pointBox.mins[1] = diff[1];
         pointBox.mins[2] = diff[2];
 
-        diff = p + Vector3d(.01, .01, .01);
+        diff = p + Vector3d(.05, .05, .05);
         pointBox.maxs[0] = diff[0];
         pointBox.maxs[1] = diff[1];
         pointBox.maxs[2] = diff[2];

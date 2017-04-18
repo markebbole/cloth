@@ -107,24 +107,24 @@ void ClothInstance::computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, ve
 
 
 
-void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv) {
+void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv) {
     //just gravity for right now.
     SparseMatrix<double> invMass = getTemplate().getInvMass();
     for(int i = 0; i < (int)x.size()/3; ++i) {
         double invM = invMass.coeffRef(3*i, 3*i);
         if(invM > 0) {
             double m = 1. / invMass.coeffRef(3*i, 3*i);
-            F(3*i + 1) += -13.8*m;
+            F_el(3*i + 1) += -9.8*m;
         }
        
     }
 
     //stretching force
-    double kStretch = 800.;
-    double kShear = 50.;
+    double kStretch = 1000.;
+    double kShear = 100.;
 
-    double kBend = 0.00001;
-    double kDampStretch = 2;
+    double kBend = 0.000003;
+    double kDampStretch = 1;
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();
     Matrix3d I;
@@ -138,7 +138,7 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
 
         Vector3d cr = (p1-p0).cross(p2-p0);
         double density = getTemplate().getDensity();
-        double triArea = density*cr.norm()/2.;
+        double triArea = abs(cr.norm()/2.);
         Vector3d x0 = x.segment<3>(3*face[0]);
         Vector3d x1 = x.segment<3>(3*face[1]);
         Vector3d x2 = x.segment<3>(3*face[2]);
@@ -201,9 +201,9 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
         Vector3d F0 = -kStretch * dC_dx[0] * C_stretch;
         Vector3d F1 = -kStretch * dC_dx[1] * C_stretch;
         Vector3d F2 = -kStretch * dC_dx[2] * C_stretch;
-        F.segment<3>(3*face[0]) += F0;
-        F.segment<3>(3*face[1]) += F1;
-        F.segment<3>(3*face[2]) += F2;
+        F_el.segment<3>(3*face[0]) += F0;
+        F_el.segment<3>(3*face[1]) += F1;
+        F_el.segment<3>(3*face[2]) += F2;
 
 
         Vector2d C_stretch_dot = dC_dx[0].transpose() * v.segment<3>(3*face[0]) 
@@ -213,9 +213,12 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
         Vector3d F_damp1 = -kDampStretch * dC_dx[1] * C_stretch_dot;
         Vector3d F_damp2 = -kDampStretch * dC_dx[2] * C_stretch_dot;
         
-        F.segment<3>(3*face[0]) += F_damp0;
-        F.segment<3>(3*face[1]) += F_damp1;
-        F.segment<3>(3*face[2]) += F_damp2;
+        F_d.segment<3>(3*face[0]) += F_damp0;
+        F_d.segment<3>(3*face[1]) += F_damp1;
+        F_d.segment<3>(3*face[2]) += F_damp2;
+
+        cout << "F_D AFTER STRETCH: " << endl;
+        cout << F_d << endl;
 
 
         //dFdx damping
@@ -234,14 +237,16 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
             C_shear_dot += dC_shear_dx[z].dot(v.segment<3>(3*face[z]));
         }
 
-        F.segment<3>(3*face[0]) += -kShear * dC_shear_dx[0] * C_shear;
-        F.segment<3>(3*face[1]) += -kShear * dC_shear_dx[1] * C_shear;
-        F.segment<3>(3*face[2]) += -kShear * dC_shear_dx[2] * C_shear;
+        F_el.segment<3>(3*face[0]) += -kShear * dC_shear_dx[0] * C_shear;
+        F_el.segment<3>(3*face[1]) += -kShear * dC_shear_dx[1] * C_shear;
+        F_el.segment<3>(3*face[2]) += -kShear * dC_shear_dx[2] * C_shear;
 
-        F.segment<3>(3*face[0]) += -kDampStretch * dC_shear_dx[0] * C_shear_dot;
-        F.segment<3>(3*face[1]) += -kDampStretch * dC_shear_dx[1] * C_shear_dot;
-        F.segment<3>(3*face[2]) += -kDampStretch * dC_shear_dx[2] * C_shear_dot;
+        F_d.segment<3>(3*face[0]) += -kDampStretch * dC_shear_dx[0] * C_shear_dot;
+        F_d.segment<3>(3*face[1]) += -kDampStretch * dC_shear_dx[1] * C_shear_dot;
+        F_d.segment<3>(3*face[2]) += -kDampStretch * dC_shear_dx[2] * C_shear_dot;
 
+        cout << "F_D AFTER SHEAR: " << endl;
+        cout << F_d << endl;
 
         Matrix3d I;
         I.setIdentity();
@@ -444,10 +449,10 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
         Vector3d F_2 = -kBend * dC_bend_2 * C_bend;
         Vector3d F_3 = -kBend * dC_bend_3 * C_bend;
 
-        F.segment<3>(3*p0) += F_0;
-        F.segment<3>(3*p1) += F_1;
-        F.segment<3>(3*p2) += F_2;
-        F.segment<3>(3*p3) += F_3;
+        F_el.segment<3>(3*p0) += F_0;
+        F_el.segment<3>(3*p1) += F_1;
+        F_el.segment<3>(3*p2) += F_2;
+        F_el.segment<3>(3*p3) += F_3;
 
         Vector3d d2na_dx[4][3][4][3];
         Vector3d d2nb_dx[4][3][4][3];
@@ -586,12 +591,13 @@ void ClothInstance::computeForces(VectorXd& F, SparseMatrix<double>& dFdx, Spars
         Vector3d F_bend_damp_2 = -kDampStretch * dC_bend_2 * dC_bend_dt;
         Vector3d F_bend_damp_3 = -kDampStretch * dC_bend_3 * dC_bend_dt;
 
-        F.segment<3>(3*p0) += F_bend_damp_0;
-        F.segment<3>(3*p1) += F_bend_damp_1;
-        F.segment<3>(3*p2) += F_bend_damp_2;
-        F.segment<3>(3*p3) += F_bend_damp_3;
+        F_d.segment<3>(3*p0) += F_bend_damp_0;
+        F_d.segment<3>(3*p1) += F_bend_damp_1;
+        F_d.segment<3>(3*p2) += F_bend_damp_2;
+        F_d.segment<3>(3*p3) += F_bend_damp_3;
 
-
+        cout << "F_D AFTER BEND: " << endl;
+        cout << F_d << endl;
 
 
         for(int i = 0; i < 4; ++i) {
