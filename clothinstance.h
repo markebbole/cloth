@@ -11,16 +11,18 @@
 #include <Eigen/Geometry>
 #include <iostream>
 #include "collisiondetection.h"
+#include "simparameters.h"
 
 using namespace Eigen;
 using namespace std;
 class ClothTemplate;
 struct AABBNode;
+struct SimParameters;
 
 class ClothInstance
 {
 public:
-    ClothInstance(const ClothTemplate &ctemplate, Eigen::VectorXd x_init);
+    ClothInstance(const ClothTemplate &ctemplate, Eigen::VectorXd x_init, const SimParameters &params);
     ~ClothInstance();
 
     void render();  
@@ -39,7 +41,7 @@ public:
 
 private:
     void computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, vector < Tr > & dFdv);
-
+    const SimParameters &params_;
     const ClothTemplate &ctemplate_;
 };
 

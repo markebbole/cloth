@@ -1,8 +1,8 @@
 #include "clothinstance.h"
 
 
-ClothInstance::ClothInstance(const ClothTemplate &ctemplate, VectorXd x_init)
-    : x(x_init), ctemplate_(ctemplate)
+ClothInstance::ClothInstance(const ClothTemplate &ctemplate, VectorXd x_init, const SimParameters &params)
+    : x(x_init), ctemplate_(ctemplate), params_(params)
 {
     
     color = Vector3d(1.0, 1.0, 1.0);
@@ -15,6 +15,20 @@ ClothInstance::ClothInstance(const ClothTemplate &ctemplate, VectorXd x_init)
 ClothInstance::~ClothInstance()
 {
     delete AABB;
+}
+
+void recursiveBVHRender(AABBNode* node) {
+    BBox b = node->box;
+    glBegin(GL_LINES);
+    glVertex3d(b.mins[0], b.mins[1], b.mins[2]);
+    glVertex3d(b.maxs[0], b.maxs[1], b.maxs[2]);
+    glEnd();
+
+    if(node->childTriangle == -1) {
+        //more nodes
+        recursiveBVHRender(node->left);
+        recursiveBVHRender(node->right);
+    }
 }
 
 void ClothInstance::render()
@@ -41,18 +55,18 @@ void ClothInstance::render()
         glMultMatrixd(xform);
         glScaled(1,1,1);*/
 
-        AABBNode* aabb = AABB;
+        
 
         //do {
-            BBox b = aabb->box;
+            // BBox b = aabb->box;
 
-            glLineWidth(1.);
-            glColor3f(1., 1., 0.);
-            glBegin(GL_LINES);
-            glVertex3d(b.mins[0], b.mins[1], b.mins[2]);
-            glVertex3d(b.maxs[0], b.maxs[1], b.maxs[2]);
+            // glLineWidth(1.);
+            // glColor3f(1., 1., 0.);
+            // glBegin(GL_LINES);
+            // glVertex3d(b.mins[0], b.mins[1], b.mins[2]);
+            // glVertex3d(b.maxs[0], b.maxs[1], b.maxs[2]);
 
-            glEnd();
+            // glEnd();
 
 
         //} while(aabb->childTriangle != -1);
@@ -108,6 +122,9 @@ void ClothInstance::render()
 
             //}
         }
+
+        AABBNode* aabb = AABB;
+        recursiveBVHRender(aabb);
         
     }
     glPopMatrix();
@@ -133,11 +150,12 @@ void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<do
     }
 
     //stretching force
-    double kStretch = 1000.;
-    double kShear = 100.;
+    double kStretch = params_.springForce;
+    double kShear = params_.shearForce;
 
-    double kBend = 0.000001;
-    double kDampStretch = .1;
+    double kBend = params_.bendForce;
+    double kDampStretch = params_.dampingForce;
+
     MatrixX3i triangles = getTemplate().getFaces();
     VectorXd V = getTemplate().getVerts();
     Matrix3d I;

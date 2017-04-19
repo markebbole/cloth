@@ -250,14 +250,21 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
     Vector3d v3 = cloth->v.segment<3>(3*tri[2]);
 
 
+    cout << x1 << endl << x2 << endl << x3 << endl << endl;
+
+
     
     Vector3d vec_43 = point - x3;
     Vector3d n_hat = (x3-x1).cross(x2-x1).normalized();
+
+    cout << "normal" << endl << n_hat<< endl;
 
     Vector3d pointVelocity = cloth->v.segment<3>(3*pointIndex);
 
 
     if(abs(vec_43.dot(n_hat)) < .1) {
+        cout << vec_43.dot(n_hat) << endl;
+        cout << "below thresh" << endl;
         double m11 = (x1-x3).dot(x1-x3);
         double m21 = (x1-x3).dot(x2-x3);
         double m12 = (x1-x3).dot(x2-x3);
@@ -270,13 +277,19 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
         Vector2d w = M.inverse() * A;
         double w3 = 1. - w(0) - w(1);
         //.1 should be replaced with characteristic length of triangle. sqrt of area?
-        double sqrtarea = sqrt(abs((x2-x1).cross(x3-x1).norm())/2.);
+        double sqrtarea = .1*sqrt(abs((x2-x1).cross(x3-x1).norm())/2.);
+        cout << "here are the W's" << endl;
+        cout << w << endl;
+        cout << w3 << endl;
+        cout << "sqrtarea: " << sqrtarea << endl;
         if(w(0) >= -sqrtarea && w(0) <= 1 + sqrtarea && w(1) >= -sqrtarea && w(1) <= 1 + sqrtarea && w3 >= -sqrtarea && w3 <= 1+sqrtarea) {
             Vector3d triPointVel = w(0) * v1 + w(1) * v2 + w3 * v3;
+            cout << "IN REGION. NOW CHECK REL_VELOCITY" << endl;
+            double rel_velocity = n_hat.dot(triPointVel + pointVelocity);
 
-            double rel_velocity = n_hat.dot(pointVelocity - triPointVel);
+            cout << "REL_V: " << rel_velocity << endl;
 
-            if(rel_velocity < 0) {
+            //if(rel_velocity < 0) {
                 Collision c;
                 c.pointIndex = pointIndex;
                 c.triIndex = triangleIndex;
@@ -284,7 +297,7 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
                 c.n_hat = n_hat;
                 c.rel_velocity = rel_velocity;
                 collisions.insert(c);
-            }
+            //}
             
         }
     }
@@ -306,13 +319,15 @@ void pointTest(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& poin
     //leaf node
     if(clothNode->childTriangle != -1) {
 
-        cout << "got to leaf" << endl;
+        //cout << "got to leaf" << endl;
         Vector3i tri = cloth->getTemplate().getFaces().row(clothNode->childTriangle);
         if(tri[0] == pIndex || tri[1] == pIndex || tri[2] == pIndex) {
             return;
         }
 
-        cout << "different triangle" << endl;
+        cout << pIndex << endl;
+
+        //cout << "different triangle" << endl;
 
         pointTriangleProximity(cloth, clothNode->childTriangle, pIndex, point, collisions);
     } else {

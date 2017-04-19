@@ -70,10 +70,10 @@ void Simulation::clearScene()
 
 
     //cloth
-    int vW = 10;
-    int vH = 10;
-    double spaceWidth = .5;
-    double spaceHeight = .5;
+    int vW = 3;
+    int vH = 3;
+    double spaceWidth = 2;
+    double spaceHeight = 2;
 
 
 
@@ -119,13 +119,12 @@ void Simulation::clearScene()
     clothVerts.segment<3>(3) = Vector3d(1., 0., 0.);
     clothVerts.segment<3>(6) = Vector3d(0., 1., 0.);
     clothVerts.segment<3>(9) = Vector3d(1., 1., 0.);
-    
     */
     
 
     ClothTemplate *clothTemplate = new ClothTemplate(clothVerts, clothFaces, 1);
 
-    ClothInstance* clothInst = new ClothInstance(*clothTemplate, clothVerts);
+    ClothInstance* clothInst = new ClothInstance(*clothTemplate, clothVerts, params_);
 
 
 
@@ -248,7 +247,7 @@ void Simulation::takeSimulationStep()
 
         set<Collision> collisions;
 
-        //selfCollisions(cloth, collisions);
+        selfCollisions(cloth, collisions);
 
         VectorXd prevX = cloth->x;
         VectorXd prevV = cloth->v;
@@ -263,39 +262,48 @@ void Simulation::takeSimulationStep()
             cout << collisions.size() << endl;
         }
 
-        // for(auto it = collisions.begin(); it != collisions.end(); ++it) {
-        //     Collision coll = *it;
-        //     double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
-        //     double magPoint = 0.;
-        //     Vector3d n_hat = coll.n_hat;
-        //     double m = 1.;
-        //     if(invMPoint > 0) {
-        //         m = 1. / invMPoint;
-        //         magPoint = m * coll.rel_velocity / 2.;
+        for(auto it = collisions.begin(); it != collisions.end(); ++it) {
+            Collision coll = *it;
+            double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
+            double magPoint = 0.;
+            Vector3d n_hat = coll.n_hat;
+            double m = 1.;
+            if(invMPoint > 0) {
+                m = 1. / invMPoint;
+                magPoint = m * coll.rel_velocity / 2.;
 
-        //     }
+            }
 
-        //     double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+            double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
 
 
-        //     Vector3i tri = cloth->getTemplate().getFaces().row(coll.triIndex);
-        //     candidateV.segment<3>(3*tri[0]) += coll.bary(0) * (magTri / m) * n_hat;
-        //     candidateV.segment<3>(3*tri[1]) += coll.bary(1) * (magTri / m) * n_hat;
-        //     candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (magTri / m) * n_hat;
+            Vector3i tri = cloth->getTemplate().getFaces().row(coll.triIndex);
+            double m1, m2, m3;
+            double invm1 = invMass.coeffRef(3*tri[0], 3*tri[0]);
+            double invm2 = invMass.coeffRef(3*tri[1], 3*tri[1]);
+            double invm3 = invMass.coeffRef(3*tri[2], 3*tri[2]);
 
-        //     candidateV.segment<3>(3*coll.pointIndex) -= (magTri / m) * n_hat;
-        //     double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
-        //         - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
-        //         - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
-        //         - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
+            candidateV.segment<3>(3*tri[0]) += coll.bary(0) * (magTri * invm1) * n_hat;
+            
+            
+            
+            
+            candidateV.segment<3>(3*tri[1]) += coll.bary(1) * (magTri *invm2) * n_hat;
+            candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (magTri * invm3) * n_hat;
 
-        //     double I_r_mag = -min(params_.timeStep * 900. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
-        //     double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
-        //     candidateV.segment<3>(3*tri[0]) += coll.bary(0) * (I_r_mag_interp / m) * n_hat;
-        //     candidateV.segment<3>(3*tri[1]) += coll.bary(1) * (I_r_mag_interp / m) * n_hat;
-        //     candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (I_r_mag_interp / m) * n_hat;
-        //     candidateV.segment<3>(3*coll.pointIndex) -= (I_r_mag_interp / m) * n_hat;
-        // }
+            candidateV.segment<3>(3*coll.pointIndex) -= (magTri / m) * n_hat;
+            // double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
+            //     - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
+            //     - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
+            //     - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
+
+            // double I_r_mag = -min(params_.timeStep * 900. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
+            // double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+            // candidateV.segment<3>(3*tri[0]) += coll.bary(0) * (I_r_mag_interp * invm1) * n_hat;
+            // candidateV.segment<3>(3*tri[1]) += coll.bary(1) * (I_r_mag_interp * invm2) * n_hat;
+            // candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (I_r_mag_interp * invm3) * n_hat;
+            // candidateV.segment<3>(3*coll.pointIndex) -= (I_r_mag_interp / m) * n_hat;
+        }
 
          //candidateV is v^(i+1/2)
 
@@ -309,29 +317,29 @@ void Simulation::takeSimulationStep()
 
         
 
-        // cloth->x = prevX + params_.timeStep * candidateV;
-        // cloth->v = candidateV;
-        // cloth->computeForces(F_el, F_d, dFdx, dFdv);
-        // F_el.setZero();
-        // F_d.setZero();
-        // dFdx.setZero();
-        // dFdv.setZero();
+        cloth->x = prevX + params_.timeStep * candidateV;
+        cloth->v = candidateV;
+        cloth->computeForces(F_el, F_d, dFdx, dFdv);
+        F_el.setZero();
+        F_d.setZero();
+        dFdx.setZero();
+        dFdv.setZero();
 
-        // SparseMatrix<double> L = I - h/2. * invMass * dFdv;
+        SparseMatrix<double> L = I - h/2. * invMass * dFdv;
 
-        // VectorXd RHS = candidateV + h/2. * invMass * F_el;
+        VectorXd RHS = candidateV + h/2. * invMass * F_el;
 
-        // solver.compute(L);
+        solver.compute(L);
 
-        // VectorXd vn_plus_1 = solver.solve(RHS);
+        VectorXd vn_plus_1 = solver.solve(RHS);
 
-        // cloth->v = vn_plus_1;
+        cloth->v = vn_plus_1;
 
         // cout << "CLOTH V AFTER APPLYING UPDATE: " << endl;
         // cout << cloth->v << endl;
 
-        cloth->x += h * (cloth->v + delta_v);
-        cloth->v += delta_v;
+        // cloth->x += h * (cloth->v + delta_v);
+        // cloth->v += delta_v;
 
     }
 

@@ -15,6 +15,11 @@ struct SimParameters
     double NewtonTolerance;
     int NewtonMaxIters;
 
+    double springForce;
+    double shearForce;
+    double bendForce;
+    double dampingForce;
+
     int activeForces;
 
     double penaltyStiffness;
