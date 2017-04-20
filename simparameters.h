@@ -6,24 +6,24 @@ struct SimParameters
     SimParameters();
 
     const static int F_GRAVITY = 1;
-    const static int F_PENALTY = 2;
-    const static int F_IMPULSE = 4;
-    const static int F_FRACTURE = 8;
+    const static int F_COLLISION_REPULSION = 2;
+    const static int F_STRETCH = 4;
+    const static int F_SHEAR = 8;
+    const static int F_BEND = 16;
+
 
     bool simRunning;
     double timeStep;
-    double NewtonTolerance;
-    int NewtonMaxIters;
 
-    double springForce;
-    double shearForce;
-    double bendForce;
-    double dampingForce;
+    double springStiffness;
+    double shearStiffness;
+    double bendStiffness;
+    double dampingStiffness;
+
+    double clothSideLen;
 
     int activeForces;
-
-    double penaltyStiffness;
-    double CoR;
+    int clothWidth;
 
 };
 

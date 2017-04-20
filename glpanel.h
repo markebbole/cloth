@@ -41,7 +41,7 @@ private:
     bool dragging_;
     Eigen::Vector2d oldpos_;
     double scale_;
-    double rot;
+    double rotLR;
 
     int cameraView_;
 };

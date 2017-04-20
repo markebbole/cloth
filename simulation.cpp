@@ -44,38 +44,24 @@ void Simulation::clearScene()
 {
     renderLock_.lock();
 
-    /*for(vector<RigidBodyTemplate *>::iterator it = templates_.begin(); it != templates_.end(); ++it)
+    for(vector<ClothInstance *>::iterator it = cloths_.begin(); it != cloths_.end(); ++it)
     {
         delete *it;
     }
-    for(vector<RigidBodyInstance *>::iterator it = bodies_.begin(); it != bodies_.end(); ++it)
+
+    for(vector<ClothTemplate *>::iterator it = cloth_templates_.begin(); it != cloth_templates_.end(); ++it)
     {
         delete *it;
-    }*/
+    }
 
-   // templates_.clear();
-   // bodies_.clear();
-
-    // double testRadius = 1.;
-    // RigidBodyTemplate *testTemplate = new RigidBodyTemplate(string("resources/sphere.tet"), testRadius);
-    // templates_.push_back(testTemplate);
-
-    // Vector3d center(0,0,0);
-    // Vector3d orient(0,0,0);
-    // double density = 1.;
-    // RigidBodyInstance *testInst = new RigidBodyInstance(*testTemplate, center, orient, density);
-    // testInst->color = Vector3d(0., 0.6, 1.);
-    // bodies_.push_back(testInst);
-
-
+    cloths_.clear();
+    cloth_templates_.clear();
 
     //cloth
-    int vW = 3;
-    int vH = 3;
-    double spaceWidth = 2;
-    double spaceHeight = 2;
-
-
+    int vW = params_.clothWidth;
+    int vH = params_.clothWidth;
+    double spaceWidth = params_.clothSideLen;
+    double spaceHeight = params_.clothSideLen;
 
     VectorXd clothVerts(3*vW*vH);
     MatrixX3i clothFaces((vW-1)*(vH-1) * 2, 3);
@@ -105,8 +91,6 @@ void Simulation::clearScene()
         }
     }
 
-
-
     cout << clothVerts << endl;
 
     cout << clothFaces << endl;
@@ -120,13 +104,11 @@ void Simulation::clearScene()
     clothVerts.segment<3>(6) = Vector3d(0., 1., 0.);
     clothVerts.segment<3>(9) = Vector3d(1., 1., 0.);
     */
-    
+    cout << "WHAT" << endl;
 
     ClothTemplate *clothTemplate = new ClothTemplate(clothVerts, clothFaces, 1);
 
     ClothInstance* clothInst = new ClothInstance(*clothTemplate, clothVerts, params_);
-
-
 
     cloth_templates_.push_back(clothTemplate);
     cloths_.push_back(clothInst);
@@ -138,10 +120,12 @@ void Simulation::clearScene()
         clothInst->x.segment<3>(3*i) = Vector3d(clothInst->x(3*i) + dx, clothInst->x(3*i+2) + dy, clothInst->x(3*i+1) + dz);
     }
 
-    //clothInst->x(3*15 + 1) += .2;
-    //clothInst->x.segment<3>(0) = Vector3d(-.1, 0., -.1);
+
+    cout << "WHAT2" << endl;
 
     clothInst->AABB = buildAABB(clothInst);
+
+    cout << "WHAT3" << endl;
 
     renderLock_.unlock();
 }
@@ -181,7 +165,6 @@ void Simulation::takeSimulationStep()
 
     SparseQR<SparseMatrix<double>, COLAMDOrdering<int> > solver;
 
-
     for(vector<ClothInstance *>::iterator it = cloths_.begin(); it != cloths_.end(); ++it)
     {
 
@@ -198,19 +181,8 @@ void Simulation::takeSimulationStep()
         F_el.setZero();
         F_d.setZero();
 
-        // cout << "dFdx bbefore" << dFdx << endl;
-
         cloth->computeForces(F_el, F_d, dFdx, dFdv);
-
-        // cout << F_el << F_d << dFdx << dFdv << endl;
-
         VectorXd F = F_el + F_d;
-
-        // cout << "F_D: " << endl;
-        // cout << F_d << endl;
-
-        // cout << "F_EL: " << endl;
-        // cout << F_el << endl;
 
         double h = params_.timeStep;
         SparseMatrix<double> invMass = cloth->getTemplate().getInvMass();
@@ -234,8 +206,6 @@ void Simulation::takeSimulationStep()
 
         VectorXd delta_v = solver.solve(b);
 
-
-
         /*VectorXd oldq = q;
         q += params_.timeStep*v;
         computeForce(q, oldq, F);
@@ -247,7 +217,10 @@ void Simulation::takeSimulationStep()
 
         set<Collision> collisions;
 
-        selfCollisions(cloth, collisions);
+        if(params_.activeForces & SimParameters::F_COLLISION_REPULSION) {
+            selfCollisions(cloth, collisions);
+        }
+        
 
         VectorXd prevX = cloth->x;
         VectorXd prevV = cloth->v;
@@ -256,6 +229,9 @@ void Simulation::takeSimulationStep()
 
         VectorXd v_avg = (candidateX - prevX) / params_.timeStep;
         VectorXd candidateV = cloth->v + delta_v;
+
+
+        double repulsionReduce = .25;
 
 
         if(collisions.size() > 0) {
@@ -283,15 +259,12 @@ void Simulation::takeSimulationStep()
             double invm2 = invMass.coeffRef(3*tri[1], 3*tri[1]);
             double invm3 = invMass.coeffRef(3*tri[2], 3*tri[2]);
 
-            candidateV.segment<3>(3*tri[0]) += coll.bary(0) * (magTri * invm1) * n_hat;
+            candidateV.segment<3>(3*tri[0]) += repulsionReduce*coll.bary(0) * (magTri * invm1) * n_hat;
             
-            
-            
-            
-            candidateV.segment<3>(3*tri[1]) += coll.bary(1) * (magTri *invm2) * n_hat;
-            candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (magTri * invm3) * n_hat;
+            candidateV.segment<3>(3*tri[1]) += repulsionReduce*coll.bary(1) * (magTri *invm2) * n_hat;
+            candidateV.segment<3>(3*tri[2]) += repulsionReduce*coll.bary(2) * (magTri * invm3) * n_hat;
 
-            candidateV.segment<3>(3*coll.pointIndex) -= (magTri / m) * n_hat;
+            candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce* (magTri / m) * n_hat;
             // double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
             //     - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
             //     - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
@@ -414,20 +387,4 @@ void Simulation::takeSimulationStep()
             }
         }
     }
-}*/
-
-/*Eigen::Vector3d Simulation::getBodyPosition(int body)
-{
-    if(body >= 0 && body < (int)bodies_.size())
-        return bodies_[body]->c;
-    return Vector3d(0,0,0);
-}
-
-double Simulation::getBodyBoundingRadius(int body)
-{
-    if(body >= 0 && body < (int)bodies_.size())
-    {
-        return bodies_[body]->getTemplate().getBoundingRadius();
-    }
-    return 1.0;
 }*/

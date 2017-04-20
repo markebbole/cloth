@@ -67,7 +67,6 @@ struct Collision
 
         return triIndex < other.triIndex;
 
-
     }
 
 };

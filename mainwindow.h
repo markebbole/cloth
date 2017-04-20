@@ -35,21 +35,25 @@ private slots:
 
     void on_timeStepEdit_editingFinished();
 
-    void on_newtonTolEdit_editingFinished();
-
-    void on_newtonMaxItersEdit_editingFinished();
-
     void on_gravityCheckBox_clicked();
 
-    void on_collisionPenaltyCheckBox_clicked();
+    void on_collisionRepulsionCheckBox_clicked();
 
-    void on_penaltyStiffnessEdit_editingFinished();
+    void on_stretchingCheckBox_clicked();
 
-    void on_collisionImpulsesCheckBox_clicked();
+    void on_shearingCheckBox_clicked();
 
-    void on_CoREdit_editingFinished();
+    void on_bendingCheckBox_clicked();
 
-    void on_velTreshEdit_editingFinished();
+    void on_shearEdit_editingFinished();
+
+    void on_bendEdit_editingFinished();
+
+    void on_dampEdit_editingFinished();
+
+    void on_clothWidthEdit_editingFinished();
+
+    void on_clothSideLenEdit_editingFinished();
 
 private:
     Controller &cont_;

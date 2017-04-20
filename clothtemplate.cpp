@@ -8,6 +8,10 @@ ClothTemplate::ClothTemplate(const Eigen::VectorXd &verts, const Eigen::MatrixX3
 	init();
 }
 
+ClothTemplate::~ClothTemplate() {
+	
+}
+
 
 void ClothTemplate::init() {
 	invMass.resize(V.size(), V.size());

@@ -16,7 +16,6 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QGroupBox>
-#include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
@@ -26,7 +25,6 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QToolBar>
-#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include "glpanel.h"
 
@@ -41,36 +39,33 @@ public:
     QWidget *centralWidget;
     GLPanel *GLWidget;
     QFrame *parameterFrame;
-    QWidget *verticalLayoutWidget;
-    QVBoxLayout *verticalLayout;
     QGroupBox *simOptionsBox;
-    QWidget *horizontalLayoutWidget;
-    QHBoxLayout *horizontalLayout;
-    QGroupBox *SimulationBox;
+    QGroupBox *activeForcesBox;
+    QCheckBox *gravityCheckBox;
+    QLabel *springLabel;
+    QLineEdit *springEdit;
+    QLabel *shearLabel;
+    QLineEdit *shearEdit;
+    QLabel *bendLabel;
+    QLineEdit *bendEdit;
+    QLabel *dampLabel;
+    QLineEdit *dampEdit;
+    QCheckBox *collisionRepulsionCheckBox;
+    QCheckBox *stretchingCheckBox;
+    QCheckBox *shearingCheckBox;
+    QCheckBox *bendingCheckBox;
+    QLabel *clothWidthLabel;
+    QLineEdit *clothWidthEdit;
+    QLabel *clothSideLenLabel;
+    QLineEdit *clothSideLenEdit;
     QPushButton *startSimulationButton;
     QGroupBox *SimParametersBox;
     QLabel *timeStepLabel;
-    QLabel *newtonTolLabel;
-    QLabel *newtonMaxItersLabel;
     QLineEdit *timeStepEdit;
-    QLineEdit *newtonTolEdit;
-    QLineEdit *newtonMaxItersEdit;
     QLabel *moonPiecesButton;
     QLabel *explosionMag;
     QLineEdit *moonPieceEdit;
     QLineEdit *explosionMagEdit;
-    QGroupBox *activeForcesBox;
-    QCheckBox *gravityCheckBox;
-    QCheckBox *collisionPenaltyCheckBox;
-    QLabel *penaltyStiffnessLabel;
-    QLineEdit *penaltyStiffnessEdit;
-    QCheckBox *collisionImpulsesCheckBox;
-    QLabel *CoRLabel;
-    QLineEdit *CoREdit;
-    QLabel *velTreshLabel;
-    QLineEdit *velTreshEdit;
-    QCheckBox *gravityCheckBox_2;
-    QGroupBox *UIOptionsBox;
     QMenuBar *menuBar;
     QMenu *menuFile;
     QMenu *menuScene;
@@ -81,7 +76,7 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QStringLiteral("MainWindow"));
-        MainWindow->resize(1200, 800);
+        MainWindow->resize(1204, 800);
         actionExit = new QAction(MainWindow);
         actionExit->setObjectName(QStringLiteral("actionExit"));
         actionReset = new QAction(MainWindow);
@@ -101,56 +96,80 @@ public:
         GLWidget->setFocusPolicy(Qt::StrongFocus);
         parameterFrame = new QFrame(centralWidget);
         parameterFrame->setObjectName(QStringLiteral("parameterFrame"));
-        parameterFrame->setGeometry(QRect(749, -1, 441, 731));
+        parameterFrame->setGeometry(QRect(740, -220, 441, 731));
         parameterFrame->setFrameShape(QFrame::StyledPanel);
         parameterFrame->setFrameShadow(QFrame::Raised);
-        verticalLayoutWidget = new QWidget(parameterFrame);
-        verticalLayoutWidget->setObjectName(QStringLiteral("verticalLayoutWidget"));
-        verticalLayoutWidget->setGeometry(QRect(9, -1, 431, 731));
-        verticalLayout = new QVBoxLayout(verticalLayoutWidget);
-        verticalLayout->setSpacing(6);
-        verticalLayout->setContentsMargins(11, 11, 11, 11);
-        verticalLayout->setObjectName(QStringLiteral("verticalLayout"));
-        verticalLayout->setContentsMargins(0, 0, 0, 0);
-        simOptionsBox = new QGroupBox(verticalLayoutWidget);
+        simOptionsBox = new QGroupBox(parameterFrame);
         simOptionsBox->setObjectName(QStringLiteral("simOptionsBox"));
-        simOptionsBox->setMaximumSize(QSize(16777215, 220));
-        horizontalLayoutWidget = new QWidget(simOptionsBox);
-        horizontalLayoutWidget->setObjectName(QStringLiteral("horizontalLayoutWidget"));
-        horizontalLayoutWidget->setGeometry(QRect(9, 19, 421, 91));
-        horizontalLayout = new QHBoxLayout(horizontalLayoutWidget);
-        horizontalLayout->setSpacing(6);
-        horizontalLayout->setContentsMargins(11, 11, 11, 11);
-        horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
-        horizontalLayout->setContentsMargins(0, 0, 0, 0);
-        SimulationBox = new QGroupBox(horizontalLayoutWidget);
-        SimulationBox->setObjectName(QStringLiteral("SimulationBox"));
-        startSimulationButton = new QPushButton(SimulationBox);
+        simOptionsBox->setGeometry(QRect(0, 250, 431, 471));
+        simOptionsBox->setMaximumSize(QSize(16777215, 500));
+        activeForcesBox = new QGroupBox(simOptionsBox);
+        activeForcesBox->setObjectName(QStringLiteral("activeForcesBox"));
+        activeForcesBox->setGeometry(QRect(0, 100, 431, 230));
+        activeForcesBox->setMaximumSize(QSize(16777215, 230));
+        gravityCheckBox = new QCheckBox(activeForcesBox);
+        gravityCheckBox->setObjectName(QStringLiteral("gravityCheckBox"));
+        gravityCheckBox->setGeometry(QRect(30, 30, 97, 21));
+        springLabel = new QLabel(activeForcesBox);
+        springLabel->setObjectName(QStringLiteral("springLabel"));
+        springLabel->setGeometry(QRect(230, 50, 121, 21));
+        springEdit = new QLineEdit(activeForcesBox);
+        springEdit->setObjectName(QStringLiteral("springEdit"));
+        springEdit->setGeometry(QRect(360, 50, 61, 21));
+        shearLabel = new QLabel(activeForcesBox);
+        shearLabel->setObjectName(QStringLiteral("shearLabel"));
+        shearLabel->setGeometry(QRect(230, 70, 111, 21));
+        shearEdit = new QLineEdit(activeForcesBox);
+        shearEdit->setObjectName(QStringLiteral("shearEdit"));
+        shearEdit->setGeometry(QRect(360, 70, 61, 21));
+        bendLabel = new QLabel(activeForcesBox);
+        bendLabel->setObjectName(QStringLiteral("bendLabel"));
+        bendLabel->setGeometry(QRect(230, 90, 111, 21));
+        bendEdit = new QLineEdit(activeForcesBox);
+        bendEdit->setObjectName(QStringLiteral("bendEdit"));
+        bendEdit->setGeometry(QRect(360, 90, 61, 21));
+        dampLabel = new QLabel(activeForcesBox);
+        dampLabel->setObjectName(QStringLiteral("dampLabel"));
+        dampLabel->setGeometry(QRect(230, 120, 111, 21));
+        dampEdit = new QLineEdit(activeForcesBox);
+        dampEdit->setObjectName(QStringLiteral("dampEdit"));
+        dampEdit->setGeometry(QRect(360, 120, 61, 21));
+        collisionRepulsionCheckBox = new QCheckBox(activeForcesBox);
+        collisionRepulsionCheckBox->setObjectName(QStringLiteral("collisionRepulsionCheckBox"));
+        collisionRepulsionCheckBox->setGeometry(QRect(30, 50, 191, 21));
+        stretchingCheckBox = new QCheckBox(activeForcesBox);
+        stretchingCheckBox->setObjectName(QStringLiteral("stretchingCheckBox"));
+        stretchingCheckBox->setGeometry(QRect(30, 70, 191, 21));
+        shearingCheckBox = new QCheckBox(activeForcesBox);
+        shearingCheckBox->setObjectName(QStringLiteral("shearingCheckBox"));
+        shearingCheckBox->setGeometry(QRect(30, 90, 191, 21));
+        bendingCheckBox = new QCheckBox(activeForcesBox);
+        bendingCheckBox->setObjectName(QStringLiteral("bendingCheckBox"));
+        bendingCheckBox->setGeometry(QRect(30, 110, 191, 21));
+        clothWidthLabel = new QLabel(activeForcesBox);
+        clothWidthLabel->setObjectName(QStringLiteral("clothWidthLabel"));
+        clothWidthLabel->setGeometry(QRect(20, 190, 111, 21));
+        clothWidthEdit = new QLineEdit(activeForcesBox);
+        clothWidthEdit->setObjectName(QStringLiteral("clothWidthEdit"));
+        clothWidthEdit->setGeometry(QRect(120, 190, 81, 21));
+        clothSideLenLabel = new QLabel(activeForcesBox);
+        clothSideLenLabel->setObjectName(QStringLiteral("clothSideLenLabel"));
+        clothSideLenLabel->setGeometry(QRect(20, 210, 111, 21));
+        clothSideLenEdit = new QLineEdit(activeForcesBox);
+        clothSideLenEdit->setObjectName(QStringLiteral("clothSideLenEdit"));
+        clothSideLenEdit->setGeometry(QRect(120, 210, 81, 21));
+        startSimulationButton = new QPushButton(simOptionsBox);
         startSimulationButton->setObjectName(QStringLiteral("startSimulationButton"));
-        startSimulationButton->setGeometry(QRect(10, 40, 181, 27));
-
-        horizontalLayout->addWidget(SimulationBox);
-
-        SimParametersBox = new QGroupBox(horizontalLayoutWidget);
+        startSimulationButton->setGeometry(QRect(0, 50, 181, 27));
+        SimParametersBox = new QGroupBox(simOptionsBox);
         SimParametersBox->setObjectName(QStringLiteral("SimParametersBox"));
+        SimParametersBox->setGeometry(QRect(210, 30, 206, 89));
         timeStepLabel = new QLabel(SimParametersBox);
         timeStepLabel->setObjectName(QStringLiteral("timeStepLabel"));
         timeStepLabel->setGeometry(QRect(10, 30, 81, 21));
-        newtonTolLabel = new QLabel(SimParametersBox);
-        newtonTolLabel->setObjectName(QStringLiteral("newtonTolLabel"));
-        newtonTolLabel->setGeometry(QRect(10, 50, 131, 21));
-        newtonMaxItersLabel = new QLabel(SimParametersBox);
-        newtonMaxItersLabel->setObjectName(QStringLiteral("newtonMaxItersLabel"));
-        newtonMaxItersLabel->setGeometry(QRect(10, 70, 131, 21));
         timeStepEdit = new QLineEdit(SimParametersBox);
         timeStepEdit->setObjectName(QStringLiteral("timeStepEdit"));
         timeStepEdit->setGeometry(QRect(140, 30, 61, 21));
-        newtonTolEdit = new QLineEdit(SimParametersBox);
-        newtonTolEdit->setObjectName(QStringLiteral("newtonTolEdit"));
-        newtonTolEdit->setGeometry(QRect(140, 50, 61, 21));
-        newtonMaxItersEdit = new QLineEdit(SimParametersBox);
-        newtonMaxItersEdit->setObjectName(QStringLiteral("newtonMaxItersEdit"));
-        newtonMaxItersEdit->setGeometry(QRect(140, 70, 61, 21));
         moonPiecesButton = new QLabel(SimParametersBox);
         moonPiecesButton->setObjectName(QStringLiteral("moonPiecesButton"));
         moonPiecesButton->setGeometry(QRect(10, 120, 121, 21));
@@ -163,67 +182,14 @@ public:
         explosionMagEdit = new QLineEdit(SimParametersBox);
         explosionMagEdit->setObjectName(QStringLiteral("explosionMagEdit"));
         explosionMagEdit->setGeometry(QRect(140, 140, 61, 21));
-
-        horizontalLayout->addWidget(SimParametersBox);
-
-
-        verticalLayout->addWidget(simOptionsBox);
-
-        activeForcesBox = new QGroupBox(verticalLayoutWidget);
-        activeForcesBox->setObjectName(QStringLiteral("activeForcesBox"));
-        activeForcesBox->setMaximumSize(QSize(16777215, 170));
-        gravityCheckBox = new QCheckBox(activeForcesBox);
-        gravityCheckBox->setObjectName(QStringLiteral("gravityCheckBox"));
-        gravityCheckBox->setGeometry(QRect(30, 30, 97, 21));
-        collisionPenaltyCheckBox = new QCheckBox(activeForcesBox);
-        collisionPenaltyCheckBox->setObjectName(QStringLiteral("collisionPenaltyCheckBox"));
-        collisionPenaltyCheckBox->setGeometry(QRect(30, 50, 131, 21));
-        penaltyStiffnessLabel = new QLabel(activeForcesBox);
-        penaltyStiffnessLabel->setObjectName(QStringLiteral("penaltyStiffnessLabel"));
-        penaltyStiffnessLabel->setGeometry(QRect(230, 50, 61, 21));
-        penaltyStiffnessEdit = new QLineEdit(activeForcesBox);
-        penaltyStiffnessEdit->setObjectName(QStringLiteral("penaltyStiffnessEdit"));
-        penaltyStiffnessEdit->setGeometry(QRect(360, 50, 61, 21));
-        collisionImpulsesCheckBox = new QCheckBox(activeForcesBox);
-        collisionImpulsesCheckBox->setObjectName(QStringLiteral("collisionImpulsesCheckBox"));
-        collisionImpulsesCheckBox->setGeometry(QRect(30, 70, 131, 21));
-        CoRLabel = new QLabel(activeForcesBox);
-        CoRLabel->setObjectName(QStringLiteral("CoRLabel"));
-        CoRLabel->setGeometry(QRect(230, 70, 61, 21));
-        CoREdit = new QLineEdit(activeForcesBox);
-        CoREdit->setObjectName(QStringLiteral("CoREdit"));
-        CoREdit->setGeometry(QRect(360, 70, 61, 21));
-        velTreshLabel = new QLabel(activeForcesBox);
-        velTreshLabel->setObjectName(QStringLiteral("velTreshLabel"));
-        velTreshLabel->setGeometry(QRect(230, 90, 81, 21));
-        velTreshEdit = new QLineEdit(activeForcesBox);
-        velTreshEdit->setObjectName(QStringLiteral("velTreshEdit"));
-        velTreshEdit->setGeometry(QRect(360, 90, 61, 21));
-        gravityCheckBox_2 = new QCheckBox(activeForcesBox);
-        gravityCheckBox_2->setObjectName(QStringLiteral("gravityCheckBox_2"));
-        gravityCheckBox_2->setGeometry(QRect(30, 30, 97, 21));
-        gravityCheckBox->raise();
-        collisionPenaltyCheckBox->raise();
-        penaltyStiffnessLabel->raise();
-        penaltyStiffnessEdit->raise();
-        collisionImpulsesCheckBox->raise();
-        CoRLabel->raise();
-        CoREdit->raise();
-        velTreshLabel->raise();
-        velTreshEdit->raise();
-        gravityCheckBox_2->raise();
-
-        verticalLayout->addWidget(activeForcesBox);
-
-        UIOptionsBox = new QGroupBox(verticalLayoutWidget);
-        UIOptionsBox->setObjectName(QStringLiteral("UIOptionsBox"));
-
-        verticalLayout->addWidget(UIOptionsBox);
-
+        activeForcesBox->raise();
+        startSimulationButton->raise();
+        SimParametersBox->raise();
+        clothSideLenEdit->raise();
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName(QStringLiteral("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 1200, 25));
+        menuBar->setGeometry(QRect(0, 0, 1204, 25));
         menuFile = new QMenu(menuBar);
         menuFile->setObjectName(QStringLiteral("menuFile"));
         menuScene = new QMenu(menuBar);
@@ -254,23 +220,23 @@ public:
         actionReset->setText(QApplication::translate("MainWindow", "Clear Scene", 0));
         actionReset_Everything->setText(QApplication::translate("MainWindow", "Reset Everything", 0));
         simOptionsBox->setTitle(QApplication::translate("MainWindow", "Simulation Options", 0));
-        SimulationBox->setTitle(QApplication::translate("MainWindow", "Simulation Controls", 0));
+        activeForcesBox->setTitle(QApplication::translate("MainWindow", "Active Forces", 0));
+        gravityCheckBox->setText(QApplication::translate("MainWindow", "Gravity", 0));
+        springLabel->setText(QApplication::translate("MainWindow", "Spring Stiffness", 0));
+        shearLabel->setText(QApplication::translate("MainWindow", "Shear Stiffness:", 0));
+        bendLabel->setText(QApplication::translate("MainWindow", "Bend Stiffness:", 0));
+        dampLabel->setText(QApplication::translate("MainWindow", "Damp Stiffness:", 0));
+        collisionRepulsionCheckBox->setText(QApplication::translate("MainWindow", "Collision Repulsion", 0));
+        stretchingCheckBox->setText(QApplication::translate("MainWindow", "Stretching", 0));
+        shearingCheckBox->setText(QApplication::translate("MainWindow", "Shearing", 0));
+        bendingCheckBox->setText(QApplication::translate("MainWindow", "Bending", 0));
+        clothWidthLabel->setText(QApplication::translate("MainWindow", "Cloth Width:", 0));
+        clothSideLenLabel->setText(QApplication::translate("MainWindow", "Cloth Side Len:", 0));
         startSimulationButton->setText(QApplication::translate("MainWindow", "Start Simulation", 0));
         SimParametersBox->setTitle(QApplication::translate("MainWindow", "Parameters", 0));
         timeStepLabel->setText(QApplication::translate("MainWindow", "Time Step:", 0));
-        newtonTolLabel->setText(QApplication::translate("MainWindow", "Newton Tolerance:", 0));
-        newtonMaxItersLabel->setText(QApplication::translate("MainWindow", "Newton Max Iters:", 0));
         moonPiecesButton->setText(QApplication::translate("MainWindow", "Moon Pieces:", 0));
         explosionMag->setText(QApplication::translate("MainWindow", "Explosion Mag:", 0));
-        activeForcesBox->setTitle(QApplication::translate("MainWindow", "Active Forces", 0));
-        gravityCheckBox->setText(QApplication::translate("MainWindow", "Gravity", 0));
-        collisionPenaltyCheckBox->setText(QApplication::translate("MainWindow", "Collision Penalty Force", 0));
-        penaltyStiffnessLabel->setText(QApplication::translate("MainWindow", "Stiffness:", 0));
-        collisionImpulsesCheckBox->setText(QApplication::translate("MainWindow", "Collision Impulses", 0));
-        CoRLabel->setText(QApplication::translate("MainWindow", "CoR:", 0));
-        velTreshLabel->setText(QApplication::translate("MainWindow", "Vel Threshold:", 0));
-        gravityCheckBox_2->setText(QApplication::translate("MainWindow", "Gravity", 0));
-        UIOptionsBox->setTitle(QApplication::translate("MainWindow", "UI Options", 0));
         menuFile->setTitle(QApplication::translate("MainWindow", "File", 0));
         menuScene->setTitle(QApplication::translate("MainWindow", "Scene", 0));
     } // retranslateUi

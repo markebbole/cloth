@@ -4,18 +4,15 @@ SimParameters::SimParameters()
 {
     simRunning = false;
     timeStep = .01;
-    NewtonMaxIters = 2000;
-    NewtonTolerance = 1e-8;
 
-    activeForces = F_GRAVITY | F_PENALTY | F_IMPULSE | F_FRACTURE;
+    activeForces = F_GRAVITY | F_COLLISION_REPULSION | F_STRETCH | F_SHEAR | F_BEND;
 
-    penaltyStiffness = 1e16;
-    CoR = 0.2;
+    clothWidth = 6;
 
-
-    springForce = 1000.;
-    shearForce = 100.;
-    bendForce = 0.000001;
-    dampingForce = 0.1;
+    springStiffness = 1000.;
+    shearStiffness = 100.;
+    bendStiffness = 0.000001;
+    dampingStiffness = 0.1;
+    clothSideLen = .5;
 
 }

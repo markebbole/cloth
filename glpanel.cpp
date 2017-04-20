@@ -4,7 +4,7 @@
 #include <iostream>
 
 using namespace Eigen;
-
+using namespace std;
 GLPanel::GLPanel(QWidget *parent) :
     QGLWidget(parent), c_(), dragging_(false), scale_(3.0)
 {
@@ -16,7 +16,7 @@ GLPanel::GLPanel(QWidget *parent) :
     lightPos_[1] = 0.;
     lightPos_[2] = 0.;
     lightPos_[3] = 0.;
-    rot = 0.;
+    rotLR = 0.;
 }
 
 void GLPanel::setController(Controller *cont)
@@ -74,8 +74,8 @@ void GLPanel::paintGL()
     //c_.setEye(eye);
     //eye[2] -= 5.0;
     c_.setCenter(eye);
-    eye[2] = 7.;
-    Vector3d axis(-.1, 0., 0.);
+    eye[2] = scale_;
+    Vector3d axis(-.1, rotLR, 0.);
     eye = VectorMath::rotationMatrix(axis) * eye;
     c_.setEye(eye);
     Vector3d up(0,1,0);
@@ -141,9 +141,19 @@ void GLPanel::mouseReleaseEvent(QMouseEvent *)
 
 void GLPanel::keyPressEvent(QKeyEvent *ke)
 {
-    int cam = ke->key()-'0';
-    if(cam >= 0 && cam <= 9)
-        cameraView_ = cam;
+
+    int k = ke->key();
+    if(k == 65) {
+        rotLR -= .2;
+    }
+
+    if(k == 68) {
+        rotLR += .2;
+    }
+    //cout << "key: " << k << endl;
+    // int cam = ke->key()-'0';
+    // if(cam >= 0 && cam <= 9)
+    //     cameraView_ = cam;
 }
 
 void GLPanel::tick()
