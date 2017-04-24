@@ -287,6 +287,29 @@
         </rect>
        </property>
       </widget>
+      <widget class="QLabel" name="gravityLabel">
+       <property name="geometry">
+        <rect>
+         <x>230</x>
+         <y>30</y>
+         <width>121</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Gravity:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="gravityEdit">
+       <property name="geometry">
+        <rect>
+         <x>360</x>
+         <y>30</y>
+         <width>61</width>
+         <height>21</height>
+        </rect>
+       </property>
+      </widget>
      </widget>
      <widget class="QPushButton" name="startSimulationButton">
       <property name="geometry">
@@ -383,10 +406,29 @@
        </property>
       </widget>
      </widget>
-     <zorder>activeForcesBox</zorder>
-     <zorder>startSimulationButton</zorder>
-     <zorder>SimParametersBox</zorder>
-     <zorder>clothSideLenEdit</zorder>
+     <widget class="QLabel" name="clothDensityLabel">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>330</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Cloth Density: </string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="clothDensityEdit">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>330</y>
+        <width>81</width>
+        <height>21</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
    </widget>
   </widget>

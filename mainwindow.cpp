@@ -61,6 +61,8 @@ void MainWindow::setParametersFromUI()
     params.bendStiffness = ui->bendEdit->text().toDouble();
     params.dampingStiffness = ui->dampEdit->text().toDouble();
     params.clothSideLen = ui->clothSideLenEdit->text().toDouble();
+    params.gravityC = ui->gravityEdit->text().toDouble();
+    params.clothDensity = ui->clothDensityEdit->text().toDouble();
 
 
     setUIFromParameters(params);
@@ -97,6 +99,8 @@ void MainWindow::setUIFromParameters(const SimParameters &params)
     ui->bendEdit->setText(QString::number(params.bendStiffness));
     ui->dampEdit->setText(QString::number(params.dampingStiffness));
     ui->clothSideLenEdit->setText(QString::number(params.clothSideLen));
+    ui->gravityEdit->setText(QString::number(params.gravityC));
+    ui->clothDensityEdit->setText(QString::number(params.clothDensity));
 }
 
 void MainWindow::updateGL()
@@ -173,6 +177,16 @@ void MainWindow::on_clothWidthEdit_editingFinished()
 }
 
 void MainWindow::on_clothSideLenEdit_editingFinished()
+{
+    setParametersFromUI();
+}
+
+void MainWindow::on_gravityEdit_editingFinished()
+{
+    setParametersFromUI();
+}
+
+void MainWindow::on_clothDensityEdit_editingFinished()
 {
     setParametersFromUI();
 }

@@ -19,6 +19,9 @@ struct SimParameters
     double shearStiffness;
     double bendStiffness;
     double dampingStiffness;
+    double clothDensity;
+
+    double gravityC;
 
     double clothSideLen;
 

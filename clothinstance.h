@@ -15,6 +15,7 @@
 
 using namespace Eigen;
 using namespace std;
+
 class ClothTemplate;
 struct AABBNode;
 struct SimParameters;
@@ -40,7 +41,11 @@ public:
     void computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
 
 private:
-    void computeShearForce(VectorXd& F, SparseMatrix<double> dFdx, vector < Tr > & dFdv);
+    void computeShearForce(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double> dFdx, SparseMatrix<double>& dFdv);
+    void computeGravity(VectorXd& F_el);
+    void computeBendForce(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
+    void computeStretchForce(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
+
     const SimParameters &params_;
     const ClothTemplate &ctemplate_;
 };

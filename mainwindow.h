@@ -55,6 +55,10 @@ private slots:
 
     void on_clothSideLenEdit_editingFinished();
 
+    void on_gravityEdit_editingFinished();
+
+    void on_clothDensityEdit_editingFinished();
+
 private:
     Controller &cont_;
     Ui::MainWindow *ui;

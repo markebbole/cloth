@@ -58,6 +58,8 @@ public:
     QLineEdit *clothWidthEdit;
     QLabel *clothSideLenLabel;
     QLineEdit *clothSideLenEdit;
+    QLabel *gravityLabel;
+    QLineEdit *gravityEdit;
     QPushButton *startSimulationButton;
     QGroupBox *SimParametersBox;
     QLabel *timeStepLabel;
@@ -66,6 +68,8 @@ public:
     QLabel *explosionMag;
     QLineEdit *moonPieceEdit;
     QLineEdit *explosionMagEdit;
+    QLabel *clothDensityLabel;
+    QLineEdit *clothDensityEdit;
     QMenuBar *menuBar;
     QMenu *menuFile;
     QMenu *menuScene;
@@ -158,6 +162,12 @@ public:
         clothSideLenEdit = new QLineEdit(activeForcesBox);
         clothSideLenEdit->setObjectName(QStringLiteral("clothSideLenEdit"));
         clothSideLenEdit->setGeometry(QRect(120, 210, 81, 21));
+        gravityLabel = new QLabel(activeForcesBox);
+        gravityLabel->setObjectName(QStringLiteral("gravityLabel"));
+        gravityLabel->setGeometry(QRect(230, 30, 121, 21));
+        gravityEdit = new QLineEdit(activeForcesBox);
+        gravityEdit->setObjectName(QStringLiteral("gravityEdit"));
+        gravityEdit->setGeometry(QRect(360, 30, 61, 21));
         startSimulationButton = new QPushButton(simOptionsBox);
         startSimulationButton->setObjectName(QStringLiteral("startSimulationButton"));
         startSimulationButton->setGeometry(QRect(0, 50, 181, 27));
@@ -182,10 +192,12 @@ public:
         explosionMagEdit = new QLineEdit(SimParametersBox);
         explosionMagEdit->setObjectName(QStringLiteral("explosionMagEdit"));
         explosionMagEdit->setGeometry(QRect(140, 140, 61, 21));
-        activeForcesBox->raise();
-        startSimulationButton->raise();
-        SimParametersBox->raise();
-        clothSideLenEdit->raise();
+        clothDensityLabel = new QLabel(simOptionsBox);
+        clothDensityLabel->setObjectName(QStringLiteral("clothDensityLabel"));
+        clothDensityLabel->setGeometry(QRect(20, 330, 111, 21));
+        clothDensityEdit = new QLineEdit(simOptionsBox);
+        clothDensityEdit->setObjectName(QStringLiteral("clothDensityEdit"));
+        clothDensityEdit->setGeometry(QRect(120, 330, 81, 21));
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName(QStringLiteral("menuBar"));
@@ -232,11 +244,13 @@ public:
         bendingCheckBox->setText(QApplication::translate("MainWindow", "Bending", 0));
         clothWidthLabel->setText(QApplication::translate("MainWindow", "Cloth Width:", 0));
         clothSideLenLabel->setText(QApplication::translate("MainWindow", "Cloth Side Len:", 0));
+        gravityLabel->setText(QApplication::translate("MainWindow", "Gravity:", 0));
         startSimulationButton->setText(QApplication::translate("MainWindow", "Start Simulation", 0));
         SimParametersBox->setTitle(QApplication::translate("MainWindow", "Parameters", 0));
         timeStepLabel->setText(QApplication::translate("MainWindow", "Time Step:", 0));
         moonPiecesButton->setText(QApplication::translate("MainWindow", "Moon Pieces:", 0));
         explosionMag->setText(QApplication::translate("MainWindow", "Explosion Mag:", 0));
+        clothDensityLabel->setText(QApplication::translate("MainWindow", "Cloth Density: ", 0));
         menuFile->setTitle(QApplication::translate("MainWindow", "File", 0));
         menuScene->setTitle(QApplication::translate("MainWindow", "Scene", 0));
     } // retranslateUi

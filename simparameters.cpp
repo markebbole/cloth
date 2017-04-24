@@ -13,6 +13,8 @@ SimParameters::SimParameters()
     shearStiffness = 100.;
     bendStiffness = 0.000001;
     dampingStiffness = 0.1;
-    clothSideLen = .5;
+    clothSideLen = .3;
+    gravityC = 9.8;
+    clothDensity = 1.;
 
 }

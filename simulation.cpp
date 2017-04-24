@@ -106,7 +106,7 @@ void Simulation::clearScene()
     */
     cout << "WHAT" << endl;
 
-    ClothTemplate *clothTemplate = new ClothTemplate(clothVerts, clothFaces, 1);
+    ClothTemplate *clothTemplate = new ClothTemplate(clothVerts, clothFaces, params_.clothDensity);
 
     ClothInstance* clothInst = new ClothInstance(*clothTemplate, clothVerts, params_);
 
@@ -121,11 +121,8 @@ void Simulation::clearScene()
     }
 
 
-    cout << "WHAT2" << endl;
-
     clothInst->AABB = buildAABB(clothInst);
 
-    cout << "WHAT3" << endl;
 
     renderLock_.unlock();
 }
