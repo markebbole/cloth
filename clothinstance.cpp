@@ -76,8 +76,6 @@ void ClothInstance::render()
         
         int nfaces = faces.rows();
         VectorXd templateVerts = getTemplate().getVerts();
-        double maxX = templateVerts(templateVerts.size()-3);
-        double maxY = templateVerts(templateVerts.size()-2);
 
         for(int i=0; i<nfaces; i++)
         {
@@ -149,7 +147,6 @@ void ClothInstance::computeShearForce(VectorXd& F_el, VectorXd& F_d, SparseMatri
         Vector3d p2 = V.segment<3>(3*face[2]);
 
         Vector3d cr = (p1-p0).cross(p2-p0);
-        double density = getTemplate().getDensity();
         double triArea = abs(cr.norm()/2.);
 
         Vector3d delta_x1 = x.segment<3>(3*face[1]) - x.segment<3>(3*face[0]);
@@ -603,7 +600,6 @@ void ClothInstance::computeStretchForce(VectorXd& F_el, VectorXd& F_d, SparseMat
         Vector3d p2 = V.segment<3>(3*face[2]);
 
         Vector3d cr = (p1-p0).cross(p2-p0);
-        double density = getTemplate().getDensity();
         double triArea = abs(cr.norm()/2.);
 
         Vector3d delta_x1 = x.segment<3>(3*face[1]) - x.segment<3>(3*face[0]);
@@ -736,7 +732,6 @@ void ClothInstance::computeStretchForce(VectorXd& F_el, VectorXd& F_d, SparseMat
 
 
 void ClothInstance::computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv) {
-    //just gravity for right now.
 
     if(params_.activeForces & SimParameters::F_GRAVITY) {
         computeGravity(F_el);

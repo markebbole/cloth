@@ -102,7 +102,6 @@ void refitAABB(const ClothInstance * instance, AABBNode *node)
         {
             Eigen::Vector3d point = instance->x.segment<3>(3*tri[k]);
 
-            //instance->c + VectorMath::rotationMatrix(instance->theta)*instance->getTemplate().getVerts().row(tet[k]).transpose();
             for(int l=0; l<3; l++)
             {
                 node->box.mins[l] = min(node->box.mins[l], point[l]);
@@ -139,7 +138,7 @@ AABBNode *buildAABB(const ClothInstance * instance)
         }
         for(int k=0; k<3; k++)
         {
-            Eigen::Vector3d point = instance->x.segment<3>(3*tri[k]);//instance->c + VectorMath::rotationMatrix(instance->theta)*instance->getTemplate().getVerts().row(tet[k]).transpose();
+            Eigen::Vector3d point = instance->x.segment<3>(3*tri[k]);
             for(int l=0; l<3; l++)
             {
                 box.mins[l] = min(box.mins[l], point[l]);
@@ -165,80 +164,6 @@ bool vertInTet(const Eigen::Vector3d &p, const Eigen::Vector3d &q1, const Eigen:
     return true;
 }
 
-/*void tetTetIntersect(const AABBNode *node1, const AABBNode *node2, int body1, int body2, const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
-{
-    if(body1==body2)
-        return;
-
-    Eigen::Vector4i tet1 = instances[body1]->getTemplate().getTets().row(node1->childtet);
-    Eigen::Vector4i tet2 = instances[body2]->getTemplate().getTets().row(node2->childtet);
-    Eigen::Vector3d verts1[4];
-    Eigen::Vector3d verts2[4];
-    for(int i=0; i<4; i++)
-    {
-        verts1[i] = instances[body1]->c + VectorMath::rotationMatrix(instances[body1]->theta)*instances[body1]->getTemplate().getVerts().row(tet1[i]).transpose();
-        verts2[i] = instances[body2]->c + VectorMath::rotationMatrix(instances[body2]->theta)*instances[body2]->getTemplate().getVerts().row(tet2[i]).transpose();
-    }
-    for(int i=0; i<4; i++)
-    {
-        if(vertInTet(verts1[i], verts2[0], verts2[1], verts2[2], verts2[3]))
-        {
-            Collision c;
-            c.body1 = body1;
-            c.body2 = body2;
-            c.collidingVertex = tet1[i];
-            c.collidingTet = node2->childtet;
-            collisions.insert(c);
-        }
-        if(vertInTet(verts2[i], verts1[0], verts1[1], verts1[2], verts1[3]))
-        {
-            Collision c;
-            c.body1 = body2;
-            c.body2 = body1;
-            c.collidingVertex = tet2[i];
-            c.collidingTet = node1->childtet;
-            collisions.insert(c);
-        }
-    }
-}*/
-
-/*void intersect(const AABBNode *node1, const AABBNode *node2, int body1, int body2, const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
-{
-    if(!node1 || !node2)
-        return;
-
-    if(!intersects(node1->box, node2->box))
-        return;
-
-    if(node1->childtet != -1)
-    {
-        if(node2->childtet != -1)
-        {
-            tetTetIntersect(node1, node2, body1, body2, instances, collisions);
-        }
-        else
-        {
-            intersect(node1, node2->left, body1, body2, instances, collisions);
-            intersect(node1, node2->right, body1, body2, instances, collisions);
-        }
-    }
-    else
-    {
-        if(node2->childtet != -1)
-        {
-            intersect(node1->left, node2, body1, body2, instances, collisions);
-            intersect(node1->right, node2, body1, body2, instances, collisions);
-        }
-        else
-        {
-            intersect(node1->left, node2->left, body1, body2, instances, collisions);
-            intersect(node1->left, node2->right, body1, body2, instances, collisions);
-            intersect(node1->right, node2->left, body1, body2, instances, collisions);
-            intersect(node1->right, node2->right, body1, body2, instances, collisions);
-        }
-    }
-}*/
-
 void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIndex, Vector3d point, std::set<Collision> &collisions) {
     Vector3i tri = cloth->getTemplate().getFaces().row(triangleIndex);
     Vector3d x1 = cloth->x.segment<3>(3*tri[0]);
@@ -260,14 +185,10 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
         n_hat = -n_hat;
     }
 
-   // cout << "normal" << endl << n_hat<< endl;
-
     Vector3d pointVelocity = cloth->v.segment<3>(3*pointIndex);
 
 
     if(abs(vec_43.dot(n_hat)) < .1) {
-       // cout << vec_43.dot(n_hat) << endl;
-       // cout << "below thresh" << endl;
         double m11 = (x1-x3).dot(x1-x3);
         double m21 = (x1-x3).dot(x2-x3);
         double m12 = (x1-x3).dot(x2-x3);
@@ -281,10 +202,7 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
         double w3 = 1. - w(0) - w(1);
         //.1 should be replaced with characteristic length of triangle. sqrt of area?
         double sqrtarea = .1*sqrt(abs((x2-x1).cross(x3-x1).norm())/2.);
-       // cout << "here are the W's" << endl;
-       // cout << w << endl;
-       // cout << w3 << endl;
-        //cout << "sqrtarea: " << sqrtarea << endl;
+
         if(w(0) >= -sqrtarea && w(0) <= 1 + sqrtarea && w(1) >= -sqrtarea && w(1) <= 1 + sqrtarea && w3 >= -sqrtarea && w3 <= 1+sqrtarea) {
             Vector3d triPointVel = w(0) * v1 + w(1) * v2 + w3 * v3;
             //cout << "IN REGION. NOW CHECK REL_VELOCITY" << endl;
@@ -307,7 +225,6 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
 }
 
 void pointTest(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& pointBox, std::set<Collision> &collisions) {
-    int nTris = (int)cloth->getTemplate().getFaces().rows();
 
     Vector3d point = cloth->x.segment<3>(3*pIndex);
 
@@ -327,10 +244,6 @@ void pointTest(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& poin
         if(tri[0] == pIndex || tri[1] == pIndex || tri[2] == pIndex) {
             return;
         }
-
-        //cout << pIndex << endl;
-
-        //cout << "different triangle" << endl;
 
         pointTriangleProximity(cloth, clothNode->childTriangle, pIndex, point, collisions);
     } else {
@@ -363,22 +276,3 @@ void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
         pointTest(cloth, cloth->AABB, i, pointBox, collisions);
     }
 }
-
-/*void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions)
-{
-    collisions.clear();
-    int nbodies = (int)instances.size();
-
-    for(int i=0; i<nbodies; i++)
-    {
-        refitAABB(instances[i], instances[i]->AABB);
-    }
-
-    for(int i=0; i<nbodies; i++)
-    {
-        for(int j=i+1; j<nbodies; j++)
-        {
-            intersect(instances[i]->AABB, instances[j]->AABB, i, j, instances, collisions);
-        }
-    }
-}*/

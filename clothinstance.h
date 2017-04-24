@@ -46,8 +46,9 @@ private:
     void computeBendForce(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
     void computeStretchForce(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
 
-    const SimParameters &params_;
     const ClothTemplate &ctemplate_;
+    const SimParameters &params_;
+    
 };
 
 #endif // CLOTHINSTANCE_H
