@@ -210,15 +210,15 @@ void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIn
             double rel_velocity = n_hat.dot(pointVelocity) - n_hat.dot(triPointVel);
          //   cout << "REL_V: " << rel_velocity << endl;
 
-            if(rel_velocity < 0) {
-                Collision c;
-                c.pointIndex = pointIndex;
-                c.triIndex = triangleIndex;
-                c.bary = Vector3d(w(0), w(1), w3);
-                c.n_hat = n_hat;
-                c.rel_velocity = rel_velocity;
-                collisions.insert(c);
-            }
+            //if(rel_velocity < 0) {
+            Collision c;
+            c.pointIndex = pointIndex;
+            c.triIndex = triangleIndex;
+            c.bary = Vector3d(w(0), w(1), w3);
+            c.n_hat = n_hat;
+            c.rel_velocity = rel_velocity;
+            collisions.insert(c);
+            //}
             
         }
     }
