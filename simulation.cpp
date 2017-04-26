@@ -15,6 +15,8 @@
 #include <utility>
 #include <algorithm>
 
+#include "exact-ccd/rootparitycollisiontest.h"
+
 const double PI = 3.1415926535898;
 
 using namespace Eigen;
@@ -213,6 +215,8 @@ void Simulation::takeSimulationStep()
 
 
         set<Collision> collisions;
+        set<CollisionCT> collisions2;
+
         VectorXd prevX = cloth->x;
         VectorXd prevV = cloth->v;
 
@@ -220,11 +224,13 @@ void Simulation::takeSimulationStep()
         VectorXd v_avg = (candidateX - prevX) / params_.timeStep;
         VectorXd candidateV = v_avg;//cloth->v + delta_v;
 
+
+
         int iter = 0;
         do {
             collisions.clear();
             if(params_.activeForces & SimParameters::F_COLLISION_REPULSION) {
-                selfCollisions(cloth, collisions);
+                selfCollisions(cloth,  collisions);
             }
 
 
@@ -288,15 +294,23 @@ void Simulation::takeSimulationStep()
                 
             }
 
+
+
+
+            // VectorXd testNewX = prevX + h * candidateV;
+            // selfCollisionsCT(cloth, testNewX, collisions2);
+
+
+
+
+
+
+
             iter++;
 
         } while(collisions.size() > 0 && iter < 5);
 
 
-        //now CTCD
-        if(collisions.size() > 0) {
-
-        }
 
 
 

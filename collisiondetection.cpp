@@ -5,6 +5,8 @@
 #include "vectormath.h"
 #include <Eigen/Geometry>
 #include <iostream>
+#include "exact-ccd/rootparitycollisiontest.h"
+#include "exact-ccd/vec.h"
 
 using namespace std;
 
@@ -120,6 +122,47 @@ void refitAABB(const ClothInstance * instance, AABBNode *node)
         }
     }
 }
+
+void refitAABBCT(const ClothInstance * instance, AABBNode *node, VectorXd& newX)
+{
+    if(node->childTriangle != -1)
+    {
+        Eigen::Vector3i tri = instance->getTemplate().getFaces().row(node->childTriangle);
+        for(int k=0; k<3; k++)
+        {
+            node->box.mins[k] = numeric_limits<double>::infinity();
+            node->box.maxs[k] = -numeric_limits<double>::infinity();
+        }
+        for(int k=0; k<3; k++)
+        {
+            Eigen::Vector3d point = instance->x.segment<3>(3*tri[k]);
+            Eigen::Vector3d point2 = newX.segment<3>(3*tri[k]);
+
+
+            for(int l=0; l<3; l++)
+            {
+                node->box.mins[l] = min(node->box.mins[l], point[l]);
+                node->box.mins[l] = min(node->box.mins[l], point2[l]);
+
+                node->box.maxs[l] = max(node->box.maxs[l], point[l]);
+                node->box.maxs[l] = max(node->box.maxs[l], point2[l]);
+
+            }
+        }
+    }
+    else if(node->left && node->right)
+    {
+        refitAABBCT(instance, node->left, newX);
+        refitAABBCT(instance, node->right, newX);
+        for(int i=0; i<3; i++)
+        {
+            node->box.mins[i] = min(node->left->box.mins[i], node->right->box.mins[i]);
+            node->box.maxs[i] = max(node->left->box.maxs[i], node->right->box.maxs[i]);
+        }
+    }
+}
+
+
 
 AABBNode *buildAABB(const ClothInstance * instance)
 {    
@@ -253,6 +296,80 @@ void pointTest(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& poin
 
 }
 
+
+void pointTestCT(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& pointBox, std::set<CollisionCT> &collisions, VectorXd& newX, VectorXd& newV) {
+
+    Vector3d point = cloth->x.segment<3>(3*pIndex);
+
+    if(!clothNode) {
+        return;
+    }
+
+    if(!intersects(clothNode->box, pointBox)) {
+        return;
+    }
+
+    //leaf node
+    if(clothNode->childTriangle != -1) {
+
+        //cout << "got to leaf" << endl;
+        Vector3i tri = cloth->getTemplate().getFaces().row(clothNode->childTriangle);
+        if(tri[0] == pIndex || tri[1] == pIndex || tri[2] == pIndex) {
+            return;
+        }
+
+        Vector3d p0 = cloth->x.segment<3>(3*pIndex);
+        Vector3d p1 = cloth->x.segment<3>(3*tri[0]);
+        Vector3d p2 = cloth->x.segment<3>(3*tri[1]);
+        Vector3d p3 = cloth->x.segment<3>(3*tri[2]);
+        Vec3d p0_(p0[0], p0[1], p0[2]);
+        Vec3d p1_(p1[0], p1[1], p1[2]);
+        Vec3d p2_(p2[0], p2[1], p2[2]);
+        Vec3d p3_(p3[0], p3[1], p3[2]);
+
+        Vector3d p0_new = newX.segment<3>(3*pIndex);
+        Vector3d p1_new = newX.segment<3>(3*tri[0]);
+        Vector3d p2_new = newX.segment<3>(3*tri[1]);
+        Vector3d p3_new = newX.segment<3>(3*tri[2]);
+        Vec3d p0_new_(p0_new[0], p0_new[1], p0_new[2]);
+        Vec3d p1_new_(p1_new[0], p1_new[1], p1_new[2]);
+        Vec3d p2_new_(p2_new[0], p2_new[1], p2_new[2]);
+        Vec3d p3_new_(p3_new[0], p3_new[1], p3_new[2]);
+        
+        
+        rootparity::RootParityCollisionTest t(p0_, p1_, p2_, p3_, p0_new_, p1_new_, p2_new_, p3_new_, false);
+        bool isCollision = t.run_test();
+        if(isCollision) {
+            Vector3i tri = cloth->getTemplate().getFaces().row(clothNode->childTriangle);
+
+            Vector3d v1 = newV.segment<3>(3*tri[0]);
+            Vector3d v2 = newV.segment<3>(3*tri[1]);
+            Vector3d v3 = newV.segment<3>(3*tri[2]);
+
+
+            //cout << x1 << endl << x2 << endl << x3 << endl << endl;
+
+
+            
+            Vector3d vec_43 = p0 - p3;
+            Vector3d n_hat = (p3-p1).cross(p2-p1).normalized();
+            if(n_hat.dot(p0 - p1) < 0) {
+                n_hat = -n_hat;
+            }
+
+            Vector3d pointVelocity = newV.segment<3>(3*pIndex);
+
+        }
+
+        
+    } else {
+        pointTestCT(cloth, clothNode->left, pIndex, pointBox, collisions, newX, newV);
+        pointTestCT(cloth, clothNode->right, pIndex, pointBox, collisions, newX, newV);
+    }
+
+}
+
+
 void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
     collisions.clear();
     int nPoints = (int)cloth->getTemplate().getVerts().size()/3;
@@ -275,4 +392,33 @@ void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
 
         pointTest(cloth, cloth->AABB, i, pointBox, collisions);
     }
+}
+
+
+void selfCollisionsCT(ClothInstance* cloth, VectorXd& newX, VectorXd& newV, std::set<CollisionCT> &collisions) {
+    collisions.clear();
+    int nPoints = (int)cloth->getTemplate().getVerts().size()/3;
+
+    refitAABBCT(cloth, cloth->AABB, newX);
+
+    for(int i = 0; i < nPoints; ++i) {
+        Vector3d p = cloth->x.segment<3>(3*i);
+        Vector3d p2 = newX.segment<3>(3*i);
+
+        BBox pointBox;
+        for(int j = 0; j < 3; ++j) {
+            pointBox.mins[j] = min(p[j], p2[j]);
+            pointBox.maxs[j] = max(p[j], p2[j]);
+        }
+
+        for(int j = 0; j < 3; ++j) {
+            pointBox.mins[j] -= 0.05;
+            pointBox.maxs[j] += 0.05;
+        }
+
+
+
+        pointTestCT(cloth, cloth->AABB, i, pointBox, collisions, newX, newV);
+    }
+
 }

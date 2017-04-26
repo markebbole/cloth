@@ -43,6 +43,8 @@ private:
 
     void computeForces(Eigen::VectorXd &Fc, Eigen::VectorXd &Ftheta);
 
+    //void handleCollisions(std::set<Collision>& collisions, )
+
     const SimParameters &params_;
     QMutex renderLock_;
 

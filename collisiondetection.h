@@ -71,8 +71,34 @@ struct Collision
 
 };
 
+struct CollisionCT
+{
+    int pointIndex;
+    int triIndex;
+    Eigen::Vector3d n_hat;
+    Eigen::Vector3d bary;
+    double rel_velocity;
+
+    bool operator<(const CollisionCT& other) const
+    {
+        if(pointIndex < other.pointIndex) {
+            return true;
+        }
+
+        if(pointIndex > other.pointIndex) {
+            return false;
+        }
+
+        return triIndex < other.triIndex;
+
+    }
+
+};
+
 bool vertInTet(const Eigen::Vector3d &p, const Eigen::Vector3d &q1, const Eigen::Vector3d &q2, const Eigen::Vector3d &q3, const Eigen::Vector3d &q4);
-void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions);
+void selfCollisions(ClothInstance* cloth,  std::set<Collision> &collisions);
+void selfCollisionsCT(ClothInstance* cloth, Eigen::VectorXd& newX, Eigen::VectorXd& newV, std::set<CollisionCT> &collisions);
+
 //void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions);
 AABBNode *buildAABB(const ClothInstance * instance);
 
