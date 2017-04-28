@@ -236,7 +236,7 @@ bool vertInTet(const Eigen::Vector3d &p, const Eigen::Vector3d &q1, const Eigen:
 }
 
 
-void pointObstacleTriangleProximity(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, AABBNode* obstNode, std::set<Collision> &collisions) {
+void pointObstacleTriangleProximity(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, int obstIndex, AABBNode* obstNode, std::set<Collision> &collisions) {
     Vector3i tri = obst->F.row(obstNode->childTriangle);
     Vector3d x1 = obst->V.row(tri[0]);
     Vector3d x2 = obst->V.row(tri[1]);
@@ -277,6 +277,8 @@ void pointObstacleTriangleProximity(ClothInstance* cloth, int pIndex, BBox& poin
             c.bary = Vector3d(w(0), w(1), w3);
             c.n_hat = n_hat;
             c.rel_velocity = rel_velocity;
+            c.triIndex = obstNode->childTriangle;
+            c.obstacleIndex = obstIndex;
             collisions.insert(c);
             
         }
@@ -494,7 +496,7 @@ void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
 }
 
 
-void pointObstacleTest(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, AABBNode* obstNode, std::set<Collision>& collisions) {
+void pointObstacleTest(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, int obstIndex, AABBNode* obstNode, std::set<Collision>& collisions) {
     if(!obstNode)
         return;
 
@@ -502,10 +504,10 @@ void pointObstacleTest(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacl
         return;
 
     if(obstNode->childTriangle != -1) {
-        pointObstacleTriangleProximity(cloth, pIndex, pointBox, obst, obstNode, collisions);
+        pointObstacleTriangleProximity(cloth, pIndex, pointBox, obst, obstIndex, obstNode, collisions);
     } else {
-        pointObstacleTest(cloth, pIndex, pointBox, obst, obstNode->left, collisions);
-        pointObstacleTest(cloth, pIndex, pointBox, obst, obstNode->right, collisions);
+        pointObstacleTest(cloth, pIndex, pointBox, obst, obstIndex, obstNode->left, collisions);
+        pointObstacleTest(cloth, pIndex, pointBox, obst, obstIndex, obstNode->right, collisions);
     }
 }
 
@@ -534,7 +536,7 @@ void obstacleCollisions(ClothInstance* cloth, std::vector< Obstacle *> obstacles
 
         for(int j = 0; j < (int)obstacles.size(); ++j) {
             Obstacle* o = obstacles[j];
-            pointObstacleTest(cloth, i, pointBox, o, o->AABB, collisions);
+            pointObstacleTest(cloth, i, pointBox, o, j, o->AABB, collisions);
         }
     }
 }

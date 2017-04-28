@@ -251,6 +251,7 @@ void Simulation::takeSimulationStep()
 
         set<Collision> collisions;
         set<Collision> collisions2;
+        set<Collision> collisions3;
 
         VectorXd prevX = cloth->x;
         VectorXd prevV = cloth->v;
@@ -262,13 +263,73 @@ void Simulation::takeSimulationStep()
 
 
         
-        collisions.clear();
-        if(params_.activeForces & SimParameters::F_COLLISION_REPULSION) {
-            selfCollisions(cloth,  collisions);
+        collisions3.clear();
+
+        double repulsionReduce = .25;
+
+        obstacleCollisions(cloth, obstacles_, collisions3);
+
+        if(collisions.size() > 0) {
+            cout << "OBSTACLE COLL: " << collisions.size() << endl;
         }
 
 
-        double repulsionReduce = .25;
+        for(auto it = collisions3.begin(); it != collisions3.end(); ++it) {
+            Collision coll = *it;
+            double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
+            double magPoint = 0.;
+            Vector3d n_hat = coll.n_hat;
+            double m = 1.;
+            if(invMPoint > 0) {
+                m = 1. / invMPoint;
+                magPoint = m * coll.rel_velocity / 2.;
+
+            }
+
+            double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+
+            if(coll.rel_velocity < 0) {
+                cout << "GOOD" << endl;
+
+                candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce*(magTri / m) * n_hat;
+                
+            }
+
+            double rel_velocity = n_hat.dot(candidateV.segment<3>(3*coll.pointIndex));
+           Obstacle* o = obstacles_[coll.obstacleIndex];
+           Vector3i obTri = o->F.row(coll.triIndex);
+
+           Vector3d obX1 = o->V.row(obTri[0]);
+           Vector3d obX2 = o->V.row(obTri[1]);
+           Vector3d obX3 = o->V.row(obTri[2]);
+
+            double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
+                - coll.bary(0)*obX1
+                - coll.bary(1)*obX2
+                - coll.bary(2)*obX3).dot(n_hat);
+            if(rel_velocity < .1*d/params_.timeStep) {
+                double I_r_mag = -min(params_.timeStep * 1000. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
+                double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+                
+                candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce * (I_r_mag_interp / m) * n_hat;
+            }
+            
+        }
+
+
+
+
+
+
+        collisions.clear();
+
+
+        if(params_.activeForces & SimParameters::F_COLLISION_REPULSION) {
+            //selfCollisions(cloth,  collisions);
+        }
+
+
+       
 
         for(auto it = collisions.begin(); it != collisions.end(); ++it) {
             Collision coll = *it;
@@ -300,7 +361,6 @@ void Simulation::takeSimulationStep()
                 candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce* (magTri / m) * n_hat;
                 
             }
-
 
             //check rel velocity again
 
@@ -337,7 +397,7 @@ void Simulation::takeSimulationStep()
 
         int iter = 0;
         do {
-            selfCollisionsCT(cloth, testNewX, candidateV, collisions2);
+            //selfCollisionsCT(cloth, testNewX, candidateV, collisions2);
 
             if(collisions2.size() > 0) {
                 cout << "CTCD > 0: " << collisions2.size() << endl;
@@ -405,7 +465,7 @@ void Simulation::takeSimulationStep()
 
             iter++;
 
-        } while((collisions.size() > 0 || collisions2.size() > 0) && iter < 5);
+        } while(collisions2.size() > 0 && iter < 5);
 
 
 
@@ -501,7 +561,7 @@ void Simulation::takeSimulationStep()
         cloth->x = prevX + params_.timeStep * candidateV;
 
         
-        if(collisions.size() == 0 && collisions2.size() == 0) {
+        if(collisions.size() == 0 && collisions2.size() == 0 && collisions3.size() == 0) {
             cloth->v = cloth->v + delta_v;
         } else {
 
