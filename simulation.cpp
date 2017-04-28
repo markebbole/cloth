@@ -56,8 +56,14 @@ void Simulation::clearScene()
         delete *it;
     }
 
+    for(vector<Obstacle *>::iterator it = obstacles_.begin(); it != obstacles_.end(); ++it)
+    {
+        delete *it;
+    }
+
     cloths_.clear();
     cloth_templates_.clear();
+    obstacles_.clear();
 
     //cloth
     int vW = params_.clothWidth;
@@ -126,6 +132,32 @@ void Simulation::clearScene()
     clothInst->AABB = buildAABB(clothInst);
 
 
+
+
+
+
+
+
+
+
+    //make a floor obstacle
+    MatrixX3i tris(2, 3);
+
+    MatrixX3d verts(4, 3);
+    verts.row(0) = Vector3d(-30., 0., -30.);
+    verts.row(1) = Vector3d(30., 0., -30.);
+    verts.row(2) = Vector3d(30., 0., 30.);
+    verts.row(3) = Vector3d(-30., 0., 30.);
+
+    tris.row(0) = Vector3i(0, 1, 2);
+    tris.row(1) = Vector3i(0, 3, 2);
+
+    Obstacle* o = new Obstacle(verts, tris);
+    o->AABB = buildObstacleAABB(o);
+
+    obstacles_.push_back(o);
+
+
     renderLock_.unlock();
 }
 
@@ -143,7 +175,10 @@ void Simulation::renderObjects()
             (*it)->render();
         }
 
-
+        for(vector<Obstacle *>::iterator it = obstacles_.begin(); it != obstacles_.end(); ++it)
+        {
+            (*it)->render();
+        }
 
         renderLock_.unlock();
     }
@@ -215,7 +250,7 @@ void Simulation::takeSimulationStep()
 
 
         set<Collision> collisions;
-        set<CollisionCT> collisions2;
+        set<Collision> collisions2;
 
         VectorXd prevX = cloth->x;
         VectorXd prevV = cloth->v;
@@ -226,17 +261,91 @@ void Simulation::takeSimulationStep()
 
 
 
-        int iter = 0;
-        do {
-            collisions.clear();
-            if(params_.activeForces & SimParameters::F_COLLISION_REPULSION) {
-                selfCollisions(cloth,  collisions);
+        
+        collisions.clear();
+        if(params_.activeForces & SimParameters::F_COLLISION_REPULSION) {
+            selfCollisions(cloth,  collisions);
+        }
+
+
+        double repulsionReduce = .25;
+
+        for(auto it = collisions.begin(); it != collisions.end(); ++it) {
+            Collision coll = *it;
+            double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
+            double magPoint = 0.;
+            Vector3d n_hat = coll.n_hat;
+            double m = 1.;
+            if(invMPoint > 0) {
+                m = 1. / invMPoint;
+                magPoint = m * coll.rel_velocity / 2.;
+
+            }
+
+            double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+
+
+            Vector3i tri = cloth->getTemplate().getFaces().row(coll.triIndex);
+            //double m1, m2, m3;
+            double invm1 = invMass.coeffRef(3*tri[0], 3*tri[0]);
+            double invm2 = invMass.coeffRef(3*tri[1], 3*tri[1]);
+            double invm3 = invMass.coeffRef(3*tri[2], 3*tri[2]);
+
+            if(coll.rel_velocity < 0) {
+                candidateV.segment<3>(3*tri[0]) += repulsionReduce*coll.bary(0) * (magTri * invm1) * n_hat;
+                
+                candidateV.segment<3>(3*tri[1]) += repulsionReduce*coll.bary(1) * (magTri *invm2) * n_hat;
+                candidateV.segment<3>(3*tri[2]) += repulsionReduce*coll.bary(2) * (magTri * invm3) * n_hat;
+
+                candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce* (magTri / m) * n_hat;
+                
             }
 
 
-            double repulsionReduce = .25;
+            //check rel velocity again
 
-            for(auto it = collisions.begin(); it != collisions.end(); ++it) {
+            Vector3d triPointVel = coll.bary(0) * candidateV.segment<3>(3*tri[0]) 
+                + coll.bary(1) *candidateV.segment<3>(3*tri[1]) 
+                + coll.bary(2) *candidateV.segment<3>(3*tri[2]);
+
+               //cout << "IN REGION. NOW CHECK REL_VELOCITY" << endl;
+               //double rel_velocity = n_hat.dot(triPointVel + pointVelocity);
+            double rel_velocity = n_hat.dot(candidateV.segment<3>(3*coll.pointIndex)) - n_hat.dot(triPointVel);
+           
+
+            double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
+                - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
+                - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
+                - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
+            if(rel_velocity < .1*d/params_.timeStep) {
+                double I_r_mag = -min(params_.timeStep * 1000. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
+                double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+                candidateV.segment<3>(3*tri[0]) += repulsionReduce * coll.bary(0) * (I_r_mag_interp * invm1) * n_hat;
+                candidateV.segment<3>(3*tri[1]) += repulsionReduce * coll.bary(1) * (I_r_mag_interp * invm2) * n_hat;
+                candidateV.segment<3>(3*tri[2]) += repulsionReduce * coll.bary(2) * (I_r_mag_interp * invm3) * n_hat;
+                candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce * (I_r_mag_interp / m) * n_hat;
+            }
+            
+        }
+
+
+
+
+
+
+        VectorXd testNewX = prevX + h * candidateV;
+
+        int iter = 0;
+        do {
+            selfCollisionsCT(cloth, testNewX, candidateV, collisions2);
+
+            if(collisions2.size() > 0) {
+                cout << "CTCD > 0: " << collisions2.size() << endl;
+            }
+
+
+
+            for(auto it = collisions2.begin(); it != collisions2.end(); ++it) {
                 Collision coll = *it;
                 double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
                 double magPoint = 0.;
@@ -248,6 +357,7 @@ void Simulation::takeSimulationStep()
 
                 }
 
+
                 double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
 
 
@@ -257,58 +367,45 @@ void Simulation::takeSimulationStep()
                 double invm2 = invMass.coeffRef(3*tri[1], 3*tri[1]);
                 double invm3 = invMass.coeffRef(3*tri[2], 3*tri[2]);
 
-                if(coll.rel_velocity < 0) {
-                    candidateV.segment<3>(3*tri[0]) += repulsionReduce*coll.bary(0) * (magTri * invm1) * n_hat;
-                    
-                    candidateV.segment<3>(3*tri[1]) += repulsionReduce*coll.bary(1) * (magTri *invm2) * n_hat;
-                    candidateV.segment<3>(3*tri[2]) += repulsionReduce*coll.bary(2) * (magTri * invm3) * n_hat;
+ 
+                candidateV.segment<3>(3*tri[0]) += coll.bary(0) * (magTri * invm1) * n_hat;
+                
+                candidateV.segment<3>(3*tri[1]) += coll.bary(1) * (magTri *invm2) * n_hat;
+                candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (magTri * invm3) * n_hat;
 
-                    candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce* (magTri / m) * n_hat;
-                    
-                }
+                candidateV.segment<3>(3*coll.pointIndex) -=  (magTri / m) * n_hat;
 
 
                 //check rel velocity again
 
-                Vector3d triPointVel = coll.bary(0) * candidateV.segment<3>(3*tri[0]) 
-                    + coll.bary(1) *candidateV.segment<3>(3*tri[1]) 
-                    + coll.bary(2) *candidateV.segment<3>(3*tri[2]);
+                // Vector3d triPointVel = coll.bary(0) * candidateV.segment<3>(3*tri[0]) 
+                //     + coll.bary(1) *candidateV.segment<3>(3*tri[1]) 
+                //     + coll.bary(2) *candidateV.segment<3>(3*tri[2]);
 
-                   //cout << "IN REGION. NOW CHECK REL_VELOCITY" << endl;
-                   //double rel_velocity = n_hat.dot(triPointVel + pointVelocity);
-                double rel_velocity = n_hat.dot(candidateV.segment<3>(3*coll.pointIndex)) - n_hat.dot(triPointVel);
+                //    //cout << "IN REGION. NOW CHECK REL_VELOCITY" << endl;
+                //    //double rel_velocity = n_hat.dot(triPointVel + pointVelocity);
+                // double rel_velocity = n_hat.dot(candidateV.segment<3>(3*coll.pointIndex)) - n_hat.dot(triPointVel);
                
 
-                double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
-                    - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
-                    - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
-                    - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
-                if(rel_velocity < .1*d/params_.timeStep) {
-                    double I_r_mag = -min(params_.timeStep * 1000. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
-                    double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
-                    candidateV.segment<3>(3*tri[0]) += repulsionReduce * coll.bary(0) * (I_r_mag_interp * invm1) * n_hat;
-                    candidateV.segment<3>(3*tri[1]) += repulsionReduce * coll.bary(1) * (I_r_mag_interp * invm2) * n_hat;
-                    candidateV.segment<3>(3*tri[2]) += repulsionReduce * coll.bary(2) * (I_r_mag_interp * invm3) * n_hat;
-                    candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce * (I_r_mag_interp / m) * n_hat;
-                }
+                // double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
+                //     - coll.bary(0)*cloth->x.segment<3>(3*tri[ 0])
+                //     - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
+                //     - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
+                // if(rel_velocity < .1*d/params_.timeStep) {
+                //     double I_r_mag = -min(params_.timeStep * 1000. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
+                //     double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+                //     candidateV.segment<3>(3*tri[0]) += repulsionReduce * coll.bary(0) * (I_r_mag_interp * invm1) * n_hat;
+                //     candidateV.segment<3>(3*tri[1]) += repulsionReduce * coll.bary(1) * (I_r_mag_interp * invm2) * n_hat;
+                //     candidateV.segment<3>(3*tri[2]) += repulsionReduce * coll.bary(2) * (I_r_mag_interp * invm3) * n_hat;
+                //     candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce * (I_r_mag_interp / m) * n_hat;
+                // }
                 
             }
 
 
-
-
-            // VectorXd testNewX = prevX + h * candidateV;
-            // selfCollisionsCT(cloth, testNewX, collisions2);
-
-
-
-
-
-
-
             iter++;
 
-        } while(collisions.size() > 0 && iter < 5);
+        } while((collisions.size() > 0 || collisions2.size() > 0) && iter < 5);
 
 
 
@@ -404,7 +501,7 @@ void Simulation::takeSimulationStep()
         cloth->x = prevX + params_.timeStep * candidateV;
 
         
-        if(collisions.size() == 0) {
+        if(collisions.size() == 0 && collisions2.size() == 0) {
             cloth->v = cloth->v + delta_v;
         } else {
 

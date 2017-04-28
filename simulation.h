@@ -9,6 +9,7 @@
 #include "simparameters.h"
 #include <QGLWidget>
 #include "distance.h"
+#include "obstacle.h"
 
 // class RigidBodyTemplate;
 // class RigidBodyInstance;
@@ -55,6 +56,8 @@ private:
 
     std::vector<ClothTemplate *> cloth_templates_;
     std::vector<ClothInstance *> cloths_;
+
+    std::vector<Obstacle*> obstacles_;
 };
 
 #endif // SIMULATION_H

@@ -7,6 +7,7 @@
 #include <iostream>
 #include "exact-ccd/rootparitycollisiontest.h"
 #include "exact-ccd/vec.h"
+#include "obstacle.h"
 
 using namespace std;
 
@@ -162,7 +163,34 @@ void refitAABBCT(const ClothInstance * instance, AABBNode *node, VectorXd& newX)
     }
 }
 
-
+AABBNode *buildObstacleAABB(const Obstacle* obst) {
+    int nTris = (int)obst->F.rows();
+    vector<AABBNode *> leaves(nTris);
+    for(int j=0; j<nTris; j++)
+    {
+        AABBNode *leaf = new AABBNode;
+        leaf->childTriangle = j;
+        Eigen::Vector3i tri = obst->F.row(j);
+        BBox box;
+        for(int k=0; k<3; k++)
+        {
+            box.mins[k] = numeric_limits<double>::infinity();
+            box.maxs[k] = -numeric_limits<double>::infinity();
+        }
+        for(int k=0; k<3; k++)
+        {
+            Eigen::Vector3d point = obst->V.row(tri[k]);//>x.segment<3>(3*tri[k]);
+            for(int l=0; l<3; l++)
+            {
+                box.mins[l] = min(box.mins[l], point[l]);
+                box.maxs[l] = max(box.maxs[l], point[l]);
+            }
+        }
+        leaf->box = box;
+        leaves[j] = leaf;
+    }
+    return buildAABB(leaves);
+}
 
 AABBNode *buildAABB(const ClothInstance * instance)
 {    
@@ -205,6 +233,54 @@ bool vertInTet(const Eigen::Vector3d &p, const Eigen::Vector3d &q1, const Eigen:
     if( (q2-q1).cross(q3-q1).dot(p-q1) < 0)
         return false;
     return true;
+}
+
+
+void pointObstacleTriangleProximity(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, AABBNode* obstNode, std::set<Collision> &collisions) {
+    Vector3i tri = obst->F.row(obstNode->childTriangle);
+    Vector3d x1 = obst->V.row(tri[0]);
+    Vector3d x2 = obst->V.row(tri[1]);
+    Vector3d x3 = obst->V.row(tri[2]);
+
+    Vector3d point = cloth->x.segment<3>(3*pIndex);
+
+    Vector3d vec_43 = point - x3;
+    Vector3d n_hat = (x3-x1).cross(x2-x1).normalized();
+
+    if(n_hat.dot(point-x1) < 0) {
+        n_hat = -n_hat;
+    }
+
+    Vector3d pointVelocity = cloth->v.segment<3>(3*pIndex);
+
+    if(abs(vec_43.dot(n_hat)) < .1) {
+        double m11 = (x1-x3).dot(x1-x3);
+        double m21 = (x1-x3).dot(x2-x3);
+        double m12 = (x1-x3).dot(x2-x3);
+        double m22 = (x2-x3).dot(x2-x3);
+        Matrix2d M;
+        M << m11, m12, m21, m22;
+
+        Vector2d A((x1-x3).dot(point-x3), (x2-x3).dot(point-x3));
+
+        Vector2d w = M.inverse() * A;
+        double w3 = 1. - w(0) - w(1);
+        //.1 should be replaced with characteristic length of triangle. sqrt of area?
+        double sqrtarea = .1*sqrt(abs((x2-x1).cross(x3-x1).norm())/2.);
+
+        if(w(0) >= -sqrtarea && w(0) <= 1 + sqrtarea && w(1) >= -sqrtarea && w(1) <= 1 + sqrtarea && w3 >= -sqrtarea && w3 <= 1+sqrtarea) {
+
+            double rel_velocity = n_hat.dot(pointVelocity);
+
+            Collision c;
+            c.pointIndex = pIndex;
+            c.bary = Vector3d(w(0), w(1), w3);
+            c.n_hat = n_hat;
+            c.rel_velocity = rel_velocity;
+            collisions.insert(c);
+            
+        }
+    }
 }
 
 void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIndex, Vector3d point, std::set<Collision> &collisions) {
@@ -297,9 +373,7 @@ void pointTest(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& poin
 }
 
 
-void pointTestCT(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& pointBox, std::set<CollisionCT> &collisions, VectorXd& newX, VectorXd& newV) {
-
-    Vector3d point = cloth->x.segment<3>(3*pIndex);
+void pointTestCT(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& pointBox, std::set<Collision> &collisions, VectorXd& newX, VectorXd& newV) {
 
     if(!clothNode) {
         return;
@@ -335,6 +409,8 @@ void pointTestCT(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& po
         Vec3d p1_new_(p1_new[0], p1_new[1], p1_new[2]);
         Vec3d p2_new_(p2_new[0], p2_new[1], p2_new[2]);
         Vec3d p3_new_(p3_new[0], p3_new[1], p3_new[2]);
+
+
         
         
         rootparity::RootParityCollisionTest t(p0_, p1_, p2_, p3_, p0_new_, p1_new_, p2_new_, p3_new_, false);
@@ -350,8 +426,6 @@ void pointTestCT(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& po
             //cout << x1 << endl << x2 << endl << x3 << endl << endl;
 
 
-            
-            Vector3d vec_43 = p0 - p3;
             Vector3d n_hat = (p3-p1).cross(p2-p1).normalized();
             if(n_hat.dot(p0 - p1) < 0) {
                 n_hat = -n_hat;
@@ -359,6 +433,31 @@ void pointTestCT(ClothInstance* cloth, AABBNode* clothNode, int pIndex, BBox& po
 
             Vector3d pointVelocity = newV.segment<3>(3*pIndex);
 
+            double m11 = (p1-p3).dot(p1-p3);
+            double m21 = (p1-p3).dot(p2-p3);
+            double m12 = (p1-p3).dot(p2-p3);
+            double m22 = (p2-p3).dot(p2-p3);
+            Matrix2d M;
+            M << m11, m12, m21, m22;
+
+            Vector2d A((p1-p3).dot(p0-p3), (p2-p3).dot(p0-p3));
+
+            Vector2d w = M.inverse() * A;
+            double w3 = 1. - w(0) - w(1);
+
+            Vector3d triPointVel = w(0) * v1 + w(1) * v2 + w3 * v3;
+            //cout << "IN REGION. NOW CHECK REL_VELOCITY" << endl;
+            //double rel_velocity = n_hat.dot(triPointVel + pointVelocity);
+            double rel_velocity = n_hat.dot(pointVelocity) - n_hat.dot(triPointVel);
+
+            Collision c;
+            c.pointIndex = pIndex;
+            c.triIndex = clothNode->childTriangle;
+            c.bary = Vector3d(w(0), w(1), w3);            
+            c.n_hat = n_hat;
+            c.rel_velocity = rel_velocity;
+            collisions.insert(c);
+                
         }
 
         
@@ -395,7 +494,53 @@ void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
 }
 
 
-void selfCollisionsCT(ClothInstance* cloth, VectorXd& newX, VectorXd& newV, std::set<CollisionCT> &collisions) {
+void pointObstacleTest(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, AABBNode* obstNode, std::set<Collision>& collisions) {
+    if(!obstNode)
+        return;
+
+    if(!intersects(pointBox, obstNode->box))
+        return;
+
+    if(obstNode->childTriangle != -1) {
+        pointObstacleTriangleProximity(cloth, pIndex, pointBox, obst, obstNode, collisions);
+    } else {
+        pointObstacleTest(cloth, pIndex, pointBox, obst, obstNode->left, collisions);
+        pointObstacleTest(cloth, pIndex, pointBox, obst, obstNode->right, collisions);
+    }
+}
+
+void obstacleCollisions(ClothInstance* cloth, std::vector< Obstacle *> obstacles, std::set<Collision> &collisions) {
+    collisions.clear();
+    int nPoints = (int)cloth->getTemplate().getVerts().size()/3;
+
+    refitAABB(cloth, cloth->AABB);
+
+    for(int i = 0; i < nPoints; ++i) {
+
+
+
+        Vector3d p = cloth->x.segment<3>(3*i);
+        BBox pointBox;
+        Vector3d diff = p - Vector3d(.05, .05, .05);
+        pointBox.mins[0] = diff[0];
+        pointBox.mins[1] = diff[1];
+        pointBox.mins[2] = diff[2];
+
+        diff = p + Vector3d(.05, .05, .05);
+        pointBox.maxs[0] = diff[0];
+        pointBox.maxs[1] = diff[1];
+        pointBox.maxs[2] = diff[2];
+
+
+        for(int j = 0; j < (int)obstacles.size(); ++j) {
+            Obstacle* o = obstacles[j];
+            pointObstacleTest(cloth, i, pointBox, o, o->AABB, collisions);
+        }
+    }
+}
+
+
+void selfCollisionsCT(ClothInstance* cloth, VectorXd& newX, VectorXd& newV, std::set<Collision> &collisions) {
     collisions.clear();
     int nPoints = (int)cloth->getTemplate().getVerts().size()/3;
 
