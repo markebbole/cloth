@@ -289,7 +289,6 @@ void Simulation::takeSimulationStep()
             double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
 
             if(coll.rel_velocity < 0) {
-                cout << "GOOD" << endl;
 
                 candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce*(magTri / m) * n_hat;
                 
@@ -325,7 +324,7 @@ void Simulation::takeSimulationStep()
 
 
         if(params_.activeForces & SimParameters::F_COLLISION_REPULSION) {
-            //selfCollisions(cloth,  collisions);
+            selfCollisions(cloth,  collisions);
         }
 
 
@@ -397,7 +396,7 @@ void Simulation::takeSimulationStep()
 
         int iter = 0;
         do {
-            //selfCollisionsCT(cloth, testNewX, candidateV, collisions2);
+            selfCollisionsCT(cloth, testNewX, candidateV, collisions2);
 
             if(collisions2.size() > 0) {
                 cout << "CTCD > 0: " << collisions2.size() << endl;
