@@ -20,6 +20,9 @@ class ClothTemplate;
 struct AABBNode;
 struct SimParameters;
 
+typedef Eigen::Triplet<double> Tr;
+
+
 class ClothInstance
 {
 public:
@@ -38,13 +41,13 @@ public:
     AABBNode *AABB;
 
     const ClothTemplate &getTemplate() const {return ctemplate_;}
-    void computeForces(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
+    void computeForces(VectorXd& F_el, VectorXd& F_d, vector<Tr>& dFdx, vector<Tr>& dFdv);
 
 private:
-    void computeShearForce(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double> dFdx, SparseMatrix<double>& dFdv);
+    void computeShearForce(VectorXd& F_el, VectorXd& F_d, vector<Tr>& dFdx, vector<Tr>& dFdv);
     void computeGravity(VectorXd& F_el);
-    void computeBendForce(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
-    void computeStretchForce(VectorXd& F_el, VectorXd& F_d, SparseMatrix<double>& dFdx, SparseMatrix<double>& dFdv);
+    void computeBendForce(VectorXd& F_el, VectorXd& F_d, vector<Tr>& dFdx, vector<Tr>& dFdv);
+    void computeStretchForce(VectorXd& F_el, VectorXd& F_d, vector<Tr>& dFdx, vector<Tr>& dFdv);
 
     const ClothTemplate &ctemplate_;
     const SimParameters &params_;

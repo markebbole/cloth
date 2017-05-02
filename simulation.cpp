@@ -14,9 +14,11 @@
 #include "collisiondetection.h"
 #include <utility>
 #include <algorithm>
-
+#include <string>
 #include "exact-ccd/rootparitycollisiontest.h"
-
+#include <fstream>
+#include <iostream>
+#include <sstream>
 const double PI = 3.1415926535898;
 
 using namespace Eigen;
@@ -41,6 +43,51 @@ Simulation::~Simulation()
 void Simulation::initializeGL()
 {    
 }
+
+
+
+void LoadObj(const std::string& file, MatrixX3d& verts,
+             MatrixX3i& tris) {
+  std::ifstream in(file);
+  
+  Vector3d vertex;
+  Vector3i face_indices;
+  vector<Vector3d> vertices;
+  vector<Vector3i> indices;
+  // glm::vec4 vertex = glm::vec4(0.0, 0.0, 0.0, 1.0);
+  // glm::uvec3 face_indices = glm::uvec3(0, 0, 0);
+  while (in.good()) {
+    char c = in.get();
+    switch (c) {
+      case 'v':
+        in >> vertex[0] >> vertex[1] >> vertex[2];
+        vertices.push_back(vertex);
+        break;
+      case 'f':
+        in >> face_indices[0] >> face_indices[1] >> face_indices[2];
+        face_indices -= Vector3i(1, 1, 1);
+        indices.push_back(face_indices);
+        break;
+      default:
+        break;
+    }
+  }
+  in.close();
+
+
+  verts.resize(vertices.size(), 3);
+  for(int i = 0; i < verts.rows(); ++i) {
+    verts.row(i) = vertices[i];
+  }
+
+  tris.resize(indices.size(), 3);
+  for(int i = 0; i < tris.rows(); ++i) {
+    tris.row(i) = indices[i];
+  }
+
+}
+
+
 
 void Simulation::clearScene()
 {
@@ -131,32 +178,37 @@ void Simulation::clearScene()
 
     clothInst->AABB = buildAABB(clothInst);
 
-
-
-
-
-
-
-
-
-
     //make a floor obstacle
+    MatrixX3i tris2(2, 3);
+
+    MatrixX3d verts2(4, 3);
+
+    LoadObj("resources/bunny.obj", verts2, tris2);
+
+    for(int i = 0; i < verts2.rows(); ++i) {
+        verts2.row(i) = 6 * verts2.row(i) + RowVector3d(0., -1., 0.);
+    }
+
+
     MatrixX3i tris(2, 3);
 
     MatrixX3d verts(4, 3);
-    verts.row(0) = Vector3d(-30., 0., -30.);
-    verts.row(1) = Vector3d(30., 0., -30.);
+    verts.row(0) = Vector3d(-30., -2., -30.);
+    verts.row(1) = Vector3d(30., -2., -30.);
     verts.row(2) = Vector3d(30., 0., 30.);
-    verts.row(3) = Vector3d(-30., 0., 30.);
+    verts.row(3) = Vector3d(-30., -2., 30.);
 
     tris.row(0) = Vector3i(0, 1, 2);
     tris.row(1) = Vector3i(0, 3, 2);
 
-    Obstacle* o = new Obstacle(verts, tris);
+    Obstacle* o = new Obstacle(verts2, tris2);
     o->AABB = buildObstacleAABB(o);
 
-    obstacles_.push_back(o);
+    Obstacle* o2 = new Obstacle(verts, tris);
+    o2->AABB = buildObstacleAABB(o2);
 
+    obstacles_.push_back(o);
+    obstacles_.push_back(o2);
 
     renderLock_.unlock();
 }
@@ -193,6 +245,12 @@ struct comp_imp {
 };
 
 
+
+void getRepulsion(Collision& coll, double invMassOfPoint) {
+
+}
+
+
 void Simulation::takeSimulationStep()
 {   
     time_ += params_.timeStep;
@@ -206,17 +264,30 @@ void Simulation::takeSimulationStep()
 
         VectorXd F_el(cloth->x.size());
         VectorXd F_d(cloth->x.size());
-        SparseMatrix<double> dFdx(cloth->x.size(), cloth->x.size());
-        dFdx.setZero();
-        SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
-        dFdv.setZero();
+        vector<Tr> dFdxCoeffs;
+        vector<Tr> dFdvCoeffs;
+
+        // SparseMatrix<double> dFdx(cloth->x.size(), cloth->x.size());
+        // dFdx.setZero();
+        // SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
+        // dFdv.setZero();
+
+
 
 
         F_el.setZero();
         F_d.setZero();
 
-        cloth->computeForces(F_el, F_d, dFdx, dFdv);
+        cloth->computeForces(F_el, F_d, dFdxCoeffs, dFdvCoeffs);
         VectorXd F = F_el + F_d;
+
+        SparseMatrix<double> dFdx(cloth->x.size(), cloth->x.size());
+        dFdx.setFromTriplets(dFdxCoeffs.begin(), dFdxCoeffs.end());
+
+        SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
+        dFdv.setFromTriplets(dFdvCoeffs.begin(), dFdvCoeffs.end());
+
+
 
         double h = params_.timeStep;
         SparseMatrix<double> invMass = cloth->getTemplate().getInvMass();
@@ -269,55 +340,97 @@ void Simulation::takeSimulationStep()
 
         obstacleCollisions(cloth, obstacles_, collisions3);
 
-        if(collisions.size() > 0) {
-            cout << "OBSTACLE COLL: " << collisions.size() << endl;
+        if(collisions3.size() > 0) {
+            cout << "OBSTACLE COLL: " << collisions3.size() << endl;
         }
 
 
         for(auto it = collisions3.begin(); it != collisions3.end(); ++it) {
+
+
+
             Collision coll = *it;
-            double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
-            double magPoint = 0.;
-            Vector3d n_hat = coll.n_hat;
-            double m = 1.;
-            if(invMPoint > 0) {
-                m = 1. / invMPoint;
-                magPoint = m * coll.rel_velocity / 2.;
 
-            }
+            if(coll.pointIndex == -1) {
+                double magPoint = coll.rel_velocity / 2.;
 
-            double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+                double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
 
-            if(coll.rel_velocity < 0) {
 
-                candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce*(magTri / m) * n_hat;
+                Vector3i tri = cloth->getTemplate().getFaces().row(coll.triIndex).transpose();
+                //double m1, m2, m3;
+                double invm1 = invMass.coeffRef(3*tri[0], 3*tri[0]);
+                double invm2 = invMass.coeffRef(3*tri[1], 3*tri[1]);
+                double invm3 = invMass.coeffRef(3*tri[2], 3*tri[2]);
+
+                if(coll.rel_velocity < 0) {
+                    candidateV.segment<3>(3*tri[0]) += .3*repulsionReduce*coll.bary(0) * (magTri * invm1) * coll.n_hat;
+                    
+                    candidateV.segment<3>(3*tri[1]) += .3*repulsionReduce*coll.bary(1) * (magTri *invm2) * coll.n_hat;
+                    candidateV.segment<3>(3*tri[2]) += .3*repulsionReduce*coll.bary(2) * (magTri * invm3) * coll.n_hat;
+
+                }
+
+                Vector3d triPointVel = coll.bary(0) * candidateV.segment<3>(3*tri[0]) 
+                    + coll.bary(1) *candidateV.segment<3>(3*tri[1]) 
+                    + coll.bary(2) *candidateV.segment<3>(3*tri[2]);
+
+                double rel_velocity = -coll.n_hat.dot(triPointVel);
                 
-            }
 
-            double rel_velocity = n_hat.dot(candidateV.segment<3>(3*coll.pointIndex));
-           Obstacle* o = obstacles_[coll.obstacleIndex];
-           Vector3i obTri = o->F.row(coll.triIndex);
+                double d = .1 - (obstacles_[coll.obstacleIndex]->V.row(coll.obstaclePointIndex).transpose() 
+                    - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
+                    - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
+                    - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(coll.n_hat);
+                if(rel_velocity < .1*d/params_.timeStep) {
+                    double I_r_mag = -min(params_.timeStep * 1000. * d,  (.1*d/params_.timeStep - coll.rel_velocity));
+                    double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+                    candidateV.segment<3>(3*tri[0]) += repulsionReduce * coll.bary(0) * (I_r_mag_interp * invm1) * coll.n_hat;
+                    candidateV.segment<3>(3*tri[1]) += repulsionReduce * coll.bary(1) * (I_r_mag_interp * invm2) * coll.n_hat;
+                    candidateV.segment<3>(3*tri[2]) += repulsionReduce * coll.bary(2) * (I_r_mag_interp * invm3) * coll.n_hat;
+                }
 
-           Vector3d obX1 = o->V.row(obTri[0]);
-           Vector3d obX2 = o->V.row(obTri[1]);
-           Vector3d obX3 = o->V.row(obTri[2]);
+            } else {
+                double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
+                double magPoint = 0.;
+                double m = 1.;
+                if(invMPoint > 0) {
+                    m = 1. / invMPoint;
+                    magPoint = m * coll.rel_velocity / 2.;
 
-            double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
-                - coll.bary(0)*obX1
-                - coll.bary(1)*obX2
-                - coll.bary(2)*obX3).dot(n_hat);
-            if(rel_velocity < .1*d/params_.timeStep) {
-                double I_r_mag = -min(params_.timeStep * 1000. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
-                double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+                }
+
+                double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+
+                Vector3i tri = obstacles_[coll.obstacleIndex]->F.row(coll.triIndex).transpose();
+                //double m1, m2, m3;
+              
+                if(coll.rel_velocity < 0) {
+
+                    candidateV.segment<3>(3*coll.pointIndex) -= .3*repulsionReduce* (magTri / m) * coll.n_hat;
+                    
+                }
+
+                //check rel velocity again
+
+                double rel_velocity = coll.n_hat.dot(candidateV.segment<3>(3*coll.pointIndex));
                 
-                candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce * (I_r_mag_interp / m) * n_hat;
+
+                double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
+                    - coll.bary(0)*obstacles_[coll.obstacleIndex]->V.row(tri[0]).transpose()
+                    - coll.bary(1)*obstacles_[coll.obstacleIndex]->V.row(tri[1]).transpose()
+                    - coll.bary(2)*obstacles_[coll.obstacleIndex]->V.row(tri[2]).transpose()).dot(coll.n_hat);
+                if(rel_velocity < .1*d/params_.timeStep) {
+                    double I_r_mag = -min(params_.timeStep * 1000. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
+                    double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
+
+                    candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce * (I_r_mag_interp / m) * coll.n_hat;
+                }
             }
+
+            
             
         }
-
-
-
-
 
 
         collisions.clear();
@@ -568,10 +681,15 @@ void Simulation::takeSimulationStep()
 
             F_el.setZero();
             F_d.setZero();
-            dFdx.setZero();
-            dFdv.setZero();
+            // dFdx.setZero();
+            // dFdv.setZero();
+            dFdxCoeffs.clear();
+            dFdvCoeffs.clear();
 
-            cloth->computeForces(F_el, F_d, dFdx, dFdv);
+            cloth->computeForces(F_el, F_d, dFdxCoeffs, dFdvCoeffs);
+
+            dFdv.setFromTriplets(dFdvCoeffs.begin(), dFdvCoeffs.end());
+
             
 
             SparseMatrix<double> L = I - h/2. * invMass * dFdv;

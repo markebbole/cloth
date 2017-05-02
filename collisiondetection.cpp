@@ -285,6 +285,55 @@ void pointObstacleTriangleProximity(ClothInstance* cloth, int pIndex, BBox& poin
     }
 }
 
+// void pointObstacleTriangleProximity2(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, int obstIndex, AABBNode* clothNode, std::set<Collision> &collisions) {
+//     Vector3i tri = cloth-->F.row(obstNode->childTriangle);
+//     Vector3d x1 = obst->V.row(tri[0]);
+//     Vector3d x2 = obst->V.row(tri[1]);
+//     Vector3d x3 = obst->V.row(tri[2]);
+
+//     Vector3d point = cloth->x.segment<3>(3*pIndex);
+
+//     Vector3d vec_43 = point - x3;
+//     Vector3d n_hat = (x3-x1).cross(x2-x1).normalized();
+
+//     if(n_hat.dot(point-x1) < 0) {
+//         n_hat = -n_hat;
+//     }
+
+//     Vector3d pointVelocity = cloth->v.segment<3>(3*pIndex);
+
+//     if(abs(vec_43.dot(n_hat)) < .1) {
+//         double m11 = (x1-x3).dot(x1-x3);
+//         double m21 = (x1-x3).dot(x2-x3);
+//         double m12 = (x1-x3).dot(x2-x3);
+//         double m22 = (x2-x3).dot(x2-x3);
+//         Matrix2d M;
+//         M << m11, m12, m21, m22;
+
+//         Vector2d A((x1-x3).dot(point-x3), (x2-x3).dot(point-x3));
+
+//         Vector2d w = M.inverse() * A;
+//         double w3 = 1. - w(0) - w(1);
+//         //.1 should be replaced with characteristic length of triangle. sqrt of area?
+//         double sqrtarea = .1*sqrt(abs((x2-x1).cross(x3-x1).norm())/2.);
+
+//         if(w(0) >= -sqrtarea && w(0) <= 1 + sqrtarea && w(1) >= -sqrtarea && w(1) <= 1 + sqrtarea && w3 >= -sqrtarea && w3 <= 1+sqrtarea) {
+
+//             double rel_velocity = n_hat.dot(pointVelocity);
+
+//             Collision c;
+//             c.pointIndex = pIndex;
+//             c.bary = Vector3d(w(0), w(1), w3);
+//             c.n_hat = n_hat;
+//             c.rel_velocity = rel_velocity;
+//             c.triIndex = obstNode->childTriangle;
+//             c.obstacleIndex = obstIndex;
+//             collisions.insert(c);
+            
+//         }
+//     }
+// }
+
 void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIndex, Vector3d point, std::set<Collision> &collisions) {
     Vector3i tri = cloth->getTemplate().getFaces().row(triangleIndex);
     Vector3d x1 = cloth->x.segment<3>(3*tri[0]);
@@ -511,36 +560,174 @@ void pointObstacleTest(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacl
     }
 }
 
-void obstacleCollisions(ClothInstance* cloth, std::vector< Obstacle *> obstacles, std::set<Collision> &collisions) {
+void obstacleCollisions(ClothInstance* cloth, std::vector< Obstacle *>& obstacles, std::set<Collision> &collisions) {
     collisions.clear();
-    int nPoints = (int)cloth->getTemplate().getVerts().size()/3;
 
     refitAABB(cloth, cloth->AABB);
 
-    for(int i = 0; i < nPoints; ++i) {
+
+    for(int i = 0; i < (int)obstacles.size(); ++i) {
+        triangleTriangleCollisions(cloth, cloth->AABB, obstacles[i]->AABB, i, obstacles, collisions);
+    }
+    // int nPoints = (int)cloth->getTemplate().getVerts().size()/3;
+
+    // refitAABB(cloth, cloth->AABB);
+
+    // for(int i = 0; i < nPoints; ++i) {
 
 
 
-        Vector3d p = cloth->x.segment<3>(3*i);
-        BBox pointBox;
-        Vector3d diff = p - Vector3d(.05, .05, .05);
-        pointBox.mins[0] = diff[0];
-        pointBox.mins[1] = diff[1];
-        pointBox.mins[2] = diff[2];
+    //     Vector3d p = cloth->x.segment<3>(3*i);
+    //     BBox pointBox;
+    //     Vector3d diff = p - Vector3d(.05, .05, .05);
+    //     pointBox.mins[0] = diff[0];
+    //     pointBox.mins[1] = diff[1];
+    //     pointBox.mins[2] = diff[2];
 
-        diff = p + Vector3d(.05, .05, .05);
-        pointBox.maxs[0] = diff[0];
-        pointBox.maxs[1] = diff[1];
-        pointBox.maxs[2] = diff[2];
+    //     diff = p + Vector3d(.05, .05, .05);
+    //     pointBox.maxs[0] = diff[0];
+    //     pointBox.maxs[1] = diff[1];
+    //     pointBox.maxs[2] = diff[2];
 
 
-        for(int j = 0; j < (int)obstacles.size(); ++j) {
-            Obstacle* o = obstacles[j];
-            pointObstacleTest(cloth, i, pointBox, o, j, o->AABB, collisions);
+    //     for(int j = 0; j < (int)obstacles.size(); ++j) {
+    //         Obstacle* o = obstacles[j];
+    //         pointObstacleTest(cloth, i, pointBox, o, j, o->AABB, collisions);
+    //     }
+    // }
+}
+
+
+Collision pointTriProx(Vector3d& p0, Vector3d& p1, Vector3d& p2, Vector3d& p3) {
+
+    Vector3d vec_43 = p0 - p3;
+    Vector3d n_hat = (p3-p1).cross(p2-p1).normalized();
+    if(n_hat.dot(p0-p1) < 0) {
+        n_hat = -n_hat;
+    }
+
+    Collision c;
+    c.isValid = false;
+
+    if(abs(vec_43.dot(n_hat)) < .1) {
+        double m11 = (p1-p3).dot(p1-p3);
+        double m21 = (p1-p3).dot(p2-p3);
+        double m12 = (p1-p3).dot(p2-p3);
+        double m22 = (p2-p3).dot(p2-p3);
+        Matrix2d M;
+        M << m11, m12, m21, m22;
+
+        Vector2d A((p1-p3).dot(p0-p3), (p2-p3).dot(p0-p3));
+
+        Vector2d w = M.inverse() * A;
+        double w3 = 1. - w(0) - w(1);
+        //.1 should be replaced with characteristic length of triangle. sqrt of area?
+        double sqrtarea = .1*sqrt(abs((p2-p1).cross(p3-p1).norm())/2.);
+
+        if(w(0) >= -sqrtarea && w(0) <= 1 + sqrtarea && w(1) >= -sqrtarea && w(1) <= 1 + sqrtarea && w3 >= -sqrtarea && w3 <= 1+sqrtarea) {
+            c.bary = Vector3d(w(0), w(1), w3);
+            c.n_hat = n_hat;
+
+            c.isValid = true;
         }
+
+    }
+
+    return c;
+
+
+}
+
+void triTriIntersect(ClothInstance* cloth, AABBNode* clothNode, AABBNode* otherNode, int otherObjectIndex, std::vector<Obstacle*>& obstacles, std::set<Collision>& collisions) {
+    Vector3i clothTri = cloth->getTemplate().getFaces().row(clothNode->childTriangle);
+    Vector3i objTri = obstacles[otherObjectIndex]->F.row(otherNode->childTriangle);
+
+    Vector3d clothVerts[3];
+    Vector3d objVerts[3];
+
+    for(int i = 0; i < 3; ++i) {
+        clothVerts[i] = cloth->x.segment<3>(3*clothTri[i]);
+        objVerts[i] = obstacles[otherObjectIndex]->V.row(objTri[i]);
+
+    }
+
+    for(int i = 0; i < 3; ++i) {
+        // Vector3d v1 = cloth->v.segment<3>(3*tri[0]);
+        //     Vector3d v2 = cloth->v.segment<3>(3*tri[1]);
+        //     Vector3d v3 = cloth->v.segment<3>(3*tri[2]);
+
+
+        Collision potentialColl = pointTriProx(clothVerts[i], objVerts[0], objVerts[1], objVerts[2]);
+        Collision potentialColl2 = pointTriProx(objVerts[i], clothVerts[0], clothVerts[1], clothVerts[2]);
+
+        if(potentialColl.isValid) {
+
+            potentialColl.pointIndex = clothTri[i];
+            double rel_velocity = potentialColl.n_hat.dot(cloth->v.segment<3>(3*clothTri[i]));
+
+            potentialColl.rel_velocity = rel_velocity;
+            potentialColl.obstacleIndex = otherObjectIndex;
+            potentialColl.triIndex = otherNode->childTriangle;
+            collisions.insert(potentialColl);
+        }
+
+        if(potentialColl2.isValid) {
+            potentialColl2.pointIndex = -1;
+
+            potentialColl2.triIndex = clothNode->childTriangle;
+            Vector3d v1 = cloth->v.segment<3>(3*clothTri[0]);
+            Vector3d v2 = cloth->v.segment<3>(3*clothTri[1]);
+            Vector3d v3 = cloth->v.segment<3>(3*clothTri[2]);
+
+
+            Vector3d triPointVel = potentialColl2.bary(0) * v1 
+                + potentialColl2.bary(1) * v2 + potentialColl2.bary(2) * v3;
+
+            potentialColl2.rel_velocity = -potentialColl2.n_hat.dot(triPointVel);
+            potentialColl2.obstaclePointIndex = objTri[i];
+            potentialColl2.obstacleIndex = otherObjectIndex;
+            collisions.insert(potentialColl2);
+
+        }
+
+            
+        
     }
 }
 
+
+void triangleTriangleCollisions(ClothInstance* cloth, AABBNode* clothNode, AABBNode* otherNode, int otherObjectIndex, std::vector<Obstacle*>& obstacles, std::set<Collision>& collisions) {
+    if(!otherNode || !clothNode) {
+        return;
+    }
+
+    if(!intersects(clothNode->box, otherNode->box)) {
+        return;
+    }
+
+    if(clothNode->childTriangle != -1) {
+        if(otherNode->childTriangle != -1) {
+            triTriIntersect(cloth, clothNode, otherNode, otherObjectIndex, obstacles, collisions);
+
+        } else {
+            triangleTriangleCollisions(cloth, clothNode, otherNode->left, otherObjectIndex, obstacles, collisions);
+            triangleTriangleCollisions(cloth, clothNode, otherNode->right, otherObjectIndex, obstacles, collisions);
+
+        }
+    } else {
+        if(otherNode->childTriangle != -1) {
+            triangleTriangleCollisions(cloth, clothNode->left, otherNode, otherObjectIndex, obstacles, collisions);
+            triangleTriangleCollisions(cloth, clothNode->right, otherNode, otherObjectIndex, obstacles, collisions);
+
+        } else {
+            triangleTriangleCollisions(cloth, clothNode->left, otherNode->left, otherObjectIndex, obstacles, collisions);
+            triangleTriangleCollisions(cloth, clothNode->left, otherNode->right, otherObjectIndex, obstacles, collisions);
+            triangleTriangleCollisions(cloth, clothNode->right, otherNode->left, otherObjectIndex, obstacles, collisions);
+            triangleTriangleCollisions(cloth, clothNode->right, otherNode->right, otherObjectIndex, obstacles, collisions);
+
+        }
+    }
+}
 
 void selfCollisionsCT(ClothInstance* cloth, VectorXd& newX, VectorXd& newV, std::set<Collision> &collisions) {
     collisions.clear();

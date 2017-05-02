@@ -84,9 +84,9 @@ void ClothTemplate::init() {
 	}
 
 	invMass.setFromTriplets(Minvcoeffs.begin(), Minvcoeffs.end());
-	invMass.coeffRef(0,0) = 0.;
-	invMass.coeffRef(1,1) = 0.;
-	invMass.coeffRef(2,2) = 0.;
+	// invMass.coeffRef(0,0) = 0.;
+	// invMass.coeffRef(1,1) = 0.;
+	// invMass.coeffRef(2,2) = 0.;
 	/*invMass.coeffRef(30*3, 30*3) = 0.;
 	invMass.coeffRef(30*3+1, 30*3+1) = 0.;
 	invMass.coeffRef(30*3+2, 30*3+2) = 0.;*/
