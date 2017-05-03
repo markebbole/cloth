@@ -68,7 +68,10 @@ void selfCollisions(ClothInstance* cloth,  std::set<Collision> &collisions);
 void selfCollisionsCT(ClothInstance* cloth, Eigen::VectorXd& newX, Eigen::VectorXd& newV, std::set<Collision> &collisions);
 void obstacleCollisions(ClothInstance* cloth, std::vector< Obstacle *>& obstacles, std::set<Collision> &collisions);
 void triangleTriangleCollisions(ClothInstance* cloth, AABBNode* clothNode, AABBNode* otherNode, int otherObjectIndex, std::vector<Obstacle*>& obstacles, std::set<Collision>& collisions);
-
+void triangleTriangleCollisionsCT(ClothInstance* cloth, VectorXd& newX, VectorXd& newV, AABBNode* clothNode, AABBNode* otherNode, int otherObjectIndex, std::vector<Obstacle*>& obstacles, std::set<Collision>& collisions);
+void triTriIntersectCT(ClothInstance* cloth, VectorXd& newX, VectorXd& newV, AABBNode* clothNode, AABBNode* otherNode, int otherObjectIndex, std::vector<Obstacle*>& obstacles, std::set<Collision>& collisions);
+ void obstacleCollisionsCT(ClothInstance* cloth, VectorXd& newX, VectorXd& newV, std::vector< Obstacle*>& obstacles, std::set<Collision> &collisions);
+  
 //void collisionDetection(const std::vector<RigidBodyInstance *> instances, std::set<Collision> &collisions);
 AABBNode *buildAABB(const ClothInstance * instance);
 AABBNode *buildObstacleAABB(const Obstacle * instance);

@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'mainwindow.ui'
 **
-** Created by: Qt User Interface Compiler version 5.5.1
+** Created by: Qt User Interface Compiler version 5.8.0
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -227,32 +227,32 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "Seveneves", 0));
-        actionExit->setText(QApplication::translate("MainWindow", "Exit", 0));
-        actionReset->setText(QApplication::translate("MainWindow", "Clear Scene", 0));
-        actionReset_Everything->setText(QApplication::translate("MainWindow", "Reset Everything", 0));
-        simOptionsBox->setTitle(QApplication::translate("MainWindow", "Simulation Options", 0));
-        activeForcesBox->setTitle(QApplication::translate("MainWindow", "Active Forces", 0));
-        gravityCheckBox->setText(QApplication::translate("MainWindow", "Gravity", 0));
-        springLabel->setText(QApplication::translate("MainWindow", "Spring Stiffness", 0));
-        shearLabel->setText(QApplication::translate("MainWindow", "Shear Stiffness:", 0));
-        bendLabel->setText(QApplication::translate("MainWindow", "Bend Stiffness:", 0));
-        dampLabel->setText(QApplication::translate("MainWindow", "Damp Stiffness:", 0));
-        collisionRepulsionCheckBox->setText(QApplication::translate("MainWindow", "Collision Repulsion", 0));
-        stretchingCheckBox->setText(QApplication::translate("MainWindow", "Stretching", 0));
-        shearingCheckBox->setText(QApplication::translate("MainWindow", "Shearing", 0));
-        bendingCheckBox->setText(QApplication::translate("MainWindow", "Bending", 0));
-        clothWidthLabel->setText(QApplication::translate("MainWindow", "Cloth Width:", 0));
-        clothSideLenLabel->setText(QApplication::translate("MainWindow", "Cloth Side Len:", 0));
-        gravityLabel->setText(QApplication::translate("MainWindow", "Gravity:", 0));
-        startSimulationButton->setText(QApplication::translate("MainWindow", "Start Simulation", 0));
-        SimParametersBox->setTitle(QApplication::translate("MainWindow", "Parameters", 0));
-        timeStepLabel->setText(QApplication::translate("MainWindow", "Time Step:", 0));
-        moonPiecesButton->setText(QApplication::translate("MainWindow", "Moon Pieces:", 0));
-        explosionMag->setText(QApplication::translate("MainWindow", "Explosion Mag:", 0));
-        clothDensityLabel->setText(QApplication::translate("MainWindow", "Cloth Density: ", 0));
-        menuFile->setTitle(QApplication::translate("MainWindow", "File", 0));
-        menuScene->setTitle(QApplication::translate("MainWindow", "Scene", 0));
+        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "Seveneves", Q_NULLPTR));
+        actionExit->setText(QApplication::translate("MainWindow", "Exit", Q_NULLPTR));
+        actionReset->setText(QApplication::translate("MainWindow", "Clear Scene", Q_NULLPTR));
+        actionReset_Everything->setText(QApplication::translate("MainWindow", "Reset Everything", Q_NULLPTR));
+        simOptionsBox->setTitle(QApplication::translate("MainWindow", "Simulation Options", Q_NULLPTR));
+        activeForcesBox->setTitle(QApplication::translate("MainWindow", "Active Forces", Q_NULLPTR));
+        gravityCheckBox->setText(QApplication::translate("MainWindow", "Gravity", Q_NULLPTR));
+        springLabel->setText(QApplication::translate("MainWindow", "Spring Stiffness", Q_NULLPTR));
+        shearLabel->setText(QApplication::translate("MainWindow", "Shear Stiffness:", Q_NULLPTR));
+        bendLabel->setText(QApplication::translate("MainWindow", "Bend Stiffness:", Q_NULLPTR));
+        dampLabel->setText(QApplication::translate("MainWindow", "Damp Stiffness:", Q_NULLPTR));
+        collisionRepulsionCheckBox->setText(QApplication::translate("MainWindow", "Collision Repulsion", Q_NULLPTR));
+        stretchingCheckBox->setText(QApplication::translate("MainWindow", "Stretching", Q_NULLPTR));
+        shearingCheckBox->setText(QApplication::translate("MainWindow", "Shearing", Q_NULLPTR));
+        bendingCheckBox->setText(QApplication::translate("MainWindow", "Bending", Q_NULLPTR));
+        clothWidthLabel->setText(QApplication::translate("MainWindow", "Cloth Width:", Q_NULLPTR));
+        clothSideLenLabel->setText(QApplication::translate("MainWindow", "Cloth Side Len:", Q_NULLPTR));
+        gravityLabel->setText(QApplication::translate("MainWindow", "Gravity:", Q_NULLPTR));
+        startSimulationButton->setText(QApplication::translate("MainWindow", "Start Simulation", Q_NULLPTR));
+        SimParametersBox->setTitle(QApplication::translate("MainWindow", "Parameters", Q_NULLPTR));
+        timeStepLabel->setText(QApplication::translate("MainWindow", "Time Step:", Q_NULLPTR));
+        moonPiecesButton->setText(QApplication::translate("MainWindow", "Moon Pieces:", Q_NULLPTR));
+        explosionMag->setText(QApplication::translate("MainWindow", "Explosion Mag:", Q_NULLPTR));
+        clothDensityLabel->setText(QApplication::translate("MainWindow", "Cloth Density: ", Q_NULLPTR));
+        menuFile->setTitle(QApplication::translate("MainWindow", "File", Q_NULLPTR));
+        menuScene->setTitle(QApplication::translate("MainWindow", "Scene", Q_NULLPTR));
     } // retranslateUi
 
 };

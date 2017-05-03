@@ -31,18 +31,19 @@ public:
     void initializeGL();
 
     void renderObjects();
-    void clearScene();    
-
-    // Eigen::Vector3d getBodyPosition(int body);
-    // double getBodyBoundingRadius(int body);
-
-    //double relativeVelocity(int, int, int, int);
-    //Eigen::VectorXd calculateDG(int b1, int b2, int v, int b2TetIndex);
+    void clearScene();
+    void loadScene(int sceneId);    
 
 private:
     void loadSphere();
 
     void computeForces(Eigen::VectorXd &Fc, Eigen::VectorXd &Ftheta);
+    void loadDefaultScene();
+    void loadScene1();
+    void loadScene2();
+    void loadScene3();
+    
+    void makeCloth(Eigen::Matrix3d& rotation, Eigen::Vector3d trans);
 
     //void handleCollisions(std::set<Collision>& collisions, )
 
@@ -50,9 +51,6 @@ private:
     QMutex renderLock_;
 
     double time_;
-
-    //std::vector<RigidBodyTemplate *> templates_;
-    //std::vector<RigidBodyInstance *> bodies_;
 
     std::vector<ClothTemplate *> cloth_templates_;
     std::vector<ClothInstance *> cloths_;

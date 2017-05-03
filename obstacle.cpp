@@ -15,17 +15,6 @@ void Obstacle::render()
 
     glPushMatrix();
     {
-        // GLdouble xform[16];
-        // for(int i=0; i<3; i++)
-        // {
-        //     for(int j=0; j<3; j++)
-        //         xform[4*j+i] = rot.coeff(i,j);
-        //     xform[4*i+3] = 0;
-        //     xform[12+i] = c[i];
-        // }
-        // xform[15] = 1.0;
-        // glMultMatrixd(xform);
-        // glScaled(1,1,1);
 
         glBegin(GL_TRIANGLES);
         const Eigen::MatrixX3i &faces =  F;
