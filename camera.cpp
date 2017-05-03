@@ -1,8 +1,13 @@
 #include "camera.h"
 #include <Eigen/Geometry>
 #include <QGLWidget>
-#include <GL/glu.h>
 #include <iostream>
+
+#ifdef __APPLE__
+#include <OpenGL/glu.h>
+#else
+#include <GL/glu.h>
+#endif
 
 using namespace Eigen;
 

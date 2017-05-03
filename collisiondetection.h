@@ -4,6 +4,15 @@
 #include <vector>
 #include <set>
 #include <Eigen/Core>
+#include "clothinstance.h"
+#include "clothtemplate.h"
+#include <Eigen/Core>
+#include "vectormath.h"
+#include <Eigen/Geometry>
+#include <iostream>
+#include "exact-ccd/rootparitycollisiontest.h"
+#include "exact-ccd/vec.h"
+#include "obstacle.h"
 
 class Obstacle;
 class ClothInstance;

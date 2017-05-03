@@ -16,8 +16,13 @@ win32 {
     LIBS += -lopengl32
 }
 
-unix {
-    LIBS += -lGLU -Lexact-ccd/ -lexact-ccd
+unix:!macx {
+    LIBS += -lGLU -Lexact-ccd -lexact-ccd
+    QMAKE_CXXFLAGS += -std=c++11 -g
+}
+
+macx: {
+    LIBS += -framework OpenGL -Lexact-ccd -lexact-ccd
     QMAKE_CXXFLAGS += -std=c++11 -g
 }
 

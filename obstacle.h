@@ -3,7 +3,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Sparse>
-class AABBNode;
+struct AABBNode;
 
 using namespace Eigen;
 

@@ -1,13 +1,5 @@
 #include "collisiondetection.h"
-#include "clothinstance.h"
-#include "clothtemplate.h"
-#include <Eigen/Core>
-#include "vectormath.h"
-#include <Eigen/Geometry>
-#include <iostream>
-#include "exact-ccd/rootparitycollisiontest.h"
-#include "exact-ccd/vec.h"
-#include "obstacle.h"
+
 
 using namespace std;
 
