@@ -21,12 +21,16 @@ public:
     void renderObjects();
     void getCameraInfo(int body, Eigen::Vector3d &center, double &scale);
 
+    int lastScene;
+
 public slots:
     void reset();
     void clearScene();
     void updateParameters(SimParameters params);
 
     void simTick();
+
+    void setLevel(int);
 
 protected:
     virtual void run();

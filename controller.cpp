@@ -8,6 +8,7 @@ using namespace Eigen;
 
 Controller::Controller(int fps) : QThread(), mw_(NULL), fps_(fps), simtimer_(NULL)
 {    
+    lastScene = 0;
 }
 
 Controller::~Controller()
@@ -42,12 +43,15 @@ void Controller::reset()
     params_ = SimParameters();
     QMetaObject::invokeMethod(mw_, "setUIFromParameters", Q_ARG(SimParameters, params_));
     clearScene();
+    sim_->loadScene(0);
+    lastScene = 0;
 }
 
 void Controller::clearScene()
 {
     QMetaObject::invokeMethod(mw_, "setUIFromParameters", Q_ARG(SimParameters, params_));
     sim_->clearScene();
+    sim_->loadScene(lastScene);
 }
 
 void Controller::updateParameters(SimParameters params)
@@ -58,6 +62,21 @@ void Controller::updateParameters(SimParameters params)
 void Controller::renderObjects()
 {
     sim_->renderObjects();
+}
+
+void Controller::setLevel(int a) {
+    if(a == 1) {
+        params_.clothSideLen = 0.1;
+        params_.clothDensity = 0.6;
+
+        //QMetaObject::invokeMethod(mw_, "setUIFromParameters", Q_ARG(SimParameters, params_));
+
+    }
+        
+
+    sim_->clearScene();
+    sim_->loadScene(a);
+    lastScene = a;
 }
 
 void Controller::simTick()

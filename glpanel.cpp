@@ -150,7 +150,12 @@ void GLPanel::keyPressEvent(QKeyEvent *ke)
     if(k == 68) {
         rotLR += .2;
     }
-    //cout << "key: " << k << endl;
+
+
+    if (k >= 49 && k <= 52) {
+        cont_->setLevel((int)k-49);
+    }
+    cout << "key: " << k << endl;
     // int cam = ke->key()-'0';
     // if(cam >= 0 && cam <= 9)
     //     cameraView_ = cam;

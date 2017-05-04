@@ -49,12 +49,20 @@ struct Collision
 
     bool operator<(const Collision& other) const
     {
+
+        //return pointIndex < other.pointIndex && obstacleIndex < other.obstacleIndex;
+        //return pointIndex < other.pointIndex;
+
         if(pointIndex < other.pointIndex) {
             return true;
         }
 
         if(pointIndex > other.pointIndex) {
             return false;
+        }
+
+        if(pointIndex == -1) {
+            return obstaclePointIndex < other.obstaclePointIndex;
         }
 
         return triIndex < other.triIndex;

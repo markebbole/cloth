@@ -11,7 +11,7 @@ void Obstacle::render()
     glColorMaterial ( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
     glEnable ( GL_COLOR_MATERIAL );
     glEnable( GL_NORMALIZE);
-    glColor4d(1., 1., 1., 1.0);
+    glColor4d(color[0], color[1], color[2], 1.0);
 
     glPushMatrix();
     {

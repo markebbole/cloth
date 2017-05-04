@@ -42,6 +42,7 @@ private:
     void loadScene1();
     void loadScene2();
     void loadScene3();
+    void deleteEverything();
     
     void makeCloth(Eigen::Matrix3d& rotation, Eigen::Vector3d trans);
 

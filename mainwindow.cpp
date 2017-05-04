@@ -87,8 +87,6 @@ void MainWindow::setUIFromParameters(const SimParameters &params)
     ui->gravityCheckBox->setChecked(params.activeForces & SimParameters::F_GRAVITY);
 
     ui->stretchingCheckBox->setChecked(params.activeForces & SimParameters::F_STRETCH);
-    
-    cout << "GRAVITY: " << (params.activeForces & SimParameters::F_GRAVITY) << endl;;
 
     ui->shearingCheckBox->setChecked(params.activeForces & SimParameters::F_SHEAR);
     ui->bendingCheckBox->setChecked(params.activeForces & SimParameters::F_BEND);

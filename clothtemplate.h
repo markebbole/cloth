@@ -48,6 +48,12 @@ public:
     const Eigen::SparseMatrix<double> &getInvMass() const { return invMass; }
     const vector < Vector4i > &getAdjacentFaces() const { return adjacentFaces; }
 
+    void setMass(int index, double mass) {
+        invMass.coeffRef(3*index, 3*index) = mass;
+        invMass.coeffRef(3*index+1, 3*index+1) = mass;
+        invMass.coeffRef(3*index+2, 3*index+2) = mass;
+    }
+
 
 private:
     ClothTemplate(const ClothTemplate &other);
