@@ -43,8 +43,7 @@ void Controller::reset()
     params_ = SimParameters();
     QMetaObject::invokeMethod(mw_, "setUIFromParameters", Q_ARG(SimParameters, params_));
     clearScene();
-    sim_->loadScene(0);
-    lastScene = 0;
+
 }
 
 void Controller::clearScene()
@@ -65,14 +64,10 @@ void Controller::renderObjects()
 }
 
 void Controller::setLevel(int a) {
-    if(a == 1) {
-        params_.clothSideLen = 0.1;
-        params_.clothDensity = 0.6;
 
-        //QMetaObject::invokeMethod(mw_, "setUIFromParameters", Q_ARG(SimParameters, params_));
-
+    if(a == 2) {
+        params_.clothSideLen = .1;
     }
-        
 
     sim_->clearScene();
     sim_->loadScene(a);
