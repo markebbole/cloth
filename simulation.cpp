@@ -368,13 +368,6 @@ void Simulation::takeSimulationStep()
         vector<Tr> dFdxCoeffs;
         vector<Tr> dFdvCoeffs;
 
-        // SparseMatrix<double> dFdx(cloth->x.size(), cloth->x.size());
-        // dFdx.setZero();
-        // SparseMatrix<double> dFdv(cloth->x.size(), cloth->x.size());
-        // dFdv.setZero();
-
-
-
 
         F_el.setZero();
         F_d.setZero();
@@ -606,15 +599,7 @@ void Simulation::takeSimulationStep()
             
         }
 
-
-
-
-
-
         VectorXd testNewX = prevX + h * candidateV;
-
-
-
 
         int iter = 0;
         do {
@@ -657,43 +642,15 @@ void Simulation::takeSimulationStep()
                 candidateV.segment<3>(3*tri[2]) += coll.bary(2) * (magTri * invm3) * n_hat;
 
                 candidateV.segment<3>(3*coll.pointIndex) -=  (magTri / m) * n_hat;
-
-
-
-
-
-                //check rel velocity again
-
-                // Vector3d triPointVel = coll.bary(0) * candidateV.segment<3>(3*tri[0]) 
-                //     + coll.bary(1) *candidateV.segment<3>(3*tri[1]) 
-                //     + coll.bary(2) *candidateV.segment<3>(3*tri[2]);
-
-                //    //cout << "IN REGION. NOW CHECK REL_VELOCITY" << endl;
-                //    //double rel_velocity = n_hat.dot(triPointVel + pointVelocity);
-                // double rel_velocity = n_hat.dot(candidateV.segment<3>(3*coll.pointIndex)) - n_hat.dot(triPointVel);
-               
-
-                // double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
-                //     - coll.bary(0)*cloth->x.segment<3>(3*tri[ 0])
-                //     - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
-                //     - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
-                // if(rel_velocity < .1*d/params_.timeStep) {
-                //     double I_r_mag = -min(params_.timeStep * params_.springStiffness * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
-                //     double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
-                //     candidateV.segment<3>(3*tri[0]) += repulsionReduce * coll.bary(0) * (I_r_mag_interp * invm1) * n_hat;
-                //     candidateV.segment<3>(3*tri[1]) += repulsionReduce * coll.bary(1) * (I_r_mag_interp * invm2) * n_hat;
-                //     candidateV.segment<3>(3*tri[2]) += repulsionReduce * coll.bary(2) * (I_r_mag_interp * invm3) * n_hat;
-                //     candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce * (I_r_mag_interp / m) * n_hat;
-                // }
                 
             }
 
 
             //obstacleCollisionsCT(cloth, testNewX, candidateV, obstacles_, collisions4);
 
-            if(collisions4.size() > 0) {
-                cout << "collisions4" << endl;
-            }
+            // if(collisions4.size() > 0) {
+            //     cout << "collisions4" << endl;
+            // }
 
             // for(auto it = collisions4.begin(); it != collisions4.end(); ++it) {
 
@@ -792,96 +749,6 @@ void Simulation::takeSimulationStep()
 
         } while((collisions2.size() > 0/* || collisions4.size() > 0*/) && iter < 5);
 
-
-        // cout << "ITER: " << iter << endl;
-
-
-
-
-
-
-        // if(params_.activeForces & SimParameters::F_COLLISION_REPULSION) {
-        //     selfCollisions(cloth, collisions);
-
-
-        // }
-        
-
-        // VectorXd prevX = cloth->x;
-        // VectorXd prevV = cloth->v;
-
-        // VectorXd candidateX = cloth->x + h * (cloth->v + delta_v);
-
-        // VectorXd v_avg = (candidateX - prevX) / params_.timeStep;
-        // VectorXd candidateV = v_avg;//cloth->v + delta_v;
-
-
-
-        // double repulsionReduce = .25;
-
-        // for(auto it = collisions.begin(); it != collisions.end(); ++it) {
-        //     Collision coll = *it;
-        //     double invMPoint = invMass.coeffRef(3*coll.pointIndex, 3*coll.pointIndex);
-        //     double magPoint = 0.;
-        //     Vector3d n_hat = coll.n_hat;
-        //     double m = 1.;
-        //     if(invMPoint > 0) {
-        //         m = 1. / invMPoint;
-        //         magPoint = m * coll.rel_velocity / 2.;
-
-        //     }
-
-        //     double magTri = 2* magPoint / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
-
-
-        //     Vector3i tri = cloth->getTemplate().getFaces().row(coll.triIndex);
-        //     //double m1, m2, m3;
-        //     double invm1 = invMass.coeffRef(3*tri[0], 3*tri[0]);
-        //     double invm2 = invMass.coeffRef(3*tri[1], 3*tri[1]);
-        //     double invm3 = invMass.coeffRef(3*tri[2], 3*tri[2]);
-
-        //     if(coll.rel_velocity < 0) {
-        //         candidateV.segment<3>(3*tri[0]) += repulsionReduce*coll.bary(0) * (magTri * invm1) * n_hat;
-                
-        //         candidateV.segment<3>(3*tri[1]) += repulsionReduce*coll.bary(1) * (magTri *invm2) * n_hat;
-        //         candidateV.segment<3>(3*tri[2]) += repulsionReduce*coll.bary(2) * (magTri * invm3) * n_hat;
-
-        //         candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce* (magTri / m) * n_hat;
-                
-        //     }
-
-
-        //     //check rel velocity again
-
-        //     Vector3d triPointVel = coll.bary(0) * candidateV.segment<3>(3*tri[0]) 
-        //         + coll.bary(1) *candidateV.segment<3>(3*tri[1]) 
-        //         + coll.bary(2) *candidateV.segment<3>(3*tri[2]);
-
-        //        //cout << "IN REGION. NOW CHECK REL_VELOCITY" << endl;
-        //        //double rel_velocity = n_hat.dot(triPointVel + pointVelocity);
-        //     double rel_velocity = n_hat.dot(candidateV.segment<3>(3*coll.pointIndex)) - n_hat.dot(triPointVel);
-           
-
-        //     double d = .1 - (cloth->x.segment<3>(3*coll.pointIndex) 
-        //         - coll.bary(0)*cloth->x.segment<3>(3*tri[0])
-        //         - coll.bary(1)*cloth->x.segment<3>(3*tri[1])
-        //         - coll.bary(2)*cloth->x.segment<3>(3*tri[2])).dot(n_hat);
-        //     if(rel_velocity < .1*d/params_.timeStep) {
-        //         double I_r_mag = -min(params_.timeStep * 1000. * d, m * (.1*d/params_.timeStep - coll.rel_velocity));
-        //         double I_r_mag_interp = 2*I_r_mag / (1 + coll.bary(0)*coll.bary(0) + coll.bary(1)*coll.bary(1) + coll.bary(2)*coll.bary(2));
-        //         candidateV.segment<3>(3*tri[0]) += repulsionReduce * coll.bary(0) * (I_r_mag_interp * invm1) * n_hat;
-        //         candidateV.segment<3>(3*tri[1]) += repulsionReduce * coll.bary(1) * (I_r_mag_interp * invm2) * n_hat;
-        //         candidateV.segment<3>(3*tri[2]) += repulsionReduce * coll.bary(2) * (I_r_mag_interp * invm3) * n_hat;
-        //         candidateV.segment<3>(3*coll.pointIndex) -= repulsionReduce * (I_r_mag_interp / m) * n_hat;
-        //     }
-            
-        // }
-
-         //candidateV is v^(i+1/2)
-
-
-        
-
        
         cloth->x = prevX + params_.timeStep * candidateV;
 
@@ -918,12 +785,6 @@ void Simulation::takeSimulationStep()
         
 
         
-
-        // cout << "CLOTH V AFTER APPLYING UPDATE: " << endl;
-        // cout << cloth->v << endl;
-
-        // cloth->x += h * (cloth->v + delta_v);
-        // cloth->v += delta_v;
 
     }
 

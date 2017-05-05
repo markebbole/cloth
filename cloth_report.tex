@@ -1,0 +1,80 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Simple Sectioned Essay Template
+% LaTeX Template
+%
+% This template has been downloaded from:
+% http://www.latextemplates.com
+%
+% Note:
+% The \lipsum[#] commands throughout this template generate dummy text
+% to fill the template out. These commands should all be removed when 
+% writing essay content.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[12pt]{article} % Default font size is 12pt, it can be changed here
+
+\usepackage{geometry} % Required to change the page size to A4
+\geometry{a4paper} % Set the page size to be A4 as opposed to the default US Letter
+\usepackage{amsmath}
+\usepackage{graphicx} % Required for including pictures
+
+\usepackage{float} % Allows putting an [H] in \begin{figure} to specify the exact location of the figure
+\usepackage{wrapfig} % Allows in-line images such as the example fish picture
+
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+
+\linespread{1.2} % Line spacing
+
+%\setlength\parindent{0pt} % Uncomment to remove all indentation from paragraphs
+
+\graphicspath{{Pictures/}} % Specifies the directory where pictures are stored
+
+\begin{document}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\section{Project Description} % Major section
+
+	This cloth project consists of two main parts. First, internal cloth dynamics had to be implemented. Second, cloth on cloth collisions and cloth on object collisions had to be handled. For the first problem, I modeled my solution after the paper Large Steps in Cloth Simulation by David Baraff and Andrew Witkin. They use an implicit method to solve a differential equation representing the cloth dynamics. The reasoning behind this is that cloth very strongly resists stretching motions, and the use of explicit methods for cloth simulation requires very small time steps in order to maintain stability. The cloth is discretized as a triangular mesh, and the position and velocity of each particle in the cloth are updated each time step according to internal and external forces.
+
+	Instead of directly defining potentials in the system and then taking derivatives in order to get force, the authors instead define a vector condition that should be 0, and then defining energy as $\frac{k}{2}C(x)^TC(x)$. Their argument for doing this is that this makes writing down damping forces easier. The authors describe stretch, shear, and bend forces. 
+
+	Given a mapping $w(u,v)$ from rest coordinates to world space, the condition is simply $a\begin{bmatrix}
+	||w_u(x)|| - b_u \\
+	||w_v(x)|| - b_v
+	\end{bmatrix}
+$
+
+where $w_u$ is the derivative of $w$ with respect to rest coordinate $u$. $b_u$ and $b_v$ are 1.
+
+For shearing, $C(x) = a w_u(x)^T w_v(x)$ where $a$ is the triangle's area. In the rest state, this product is 0. 
+
+For bending, $C(x) = \theta$, where $\theta$ is the angle between two adjacent triangles.
+	
+From these conditions, the force on particle $i$ can be calculated as $f_i = -k \frac{\partial C(x)}{\partial x_i} C(x).$
+
+
+
+To handle collisions, I read the paper Robust Treatment of Collisions, Contact and Friction for Cloth Animation by Bridson et. al. The main idea in their paper is to combine different types of repulsive forces in order to handle cloth on cloth collisions robustly. Their method works with any cloth dynamics system, so it was a good fit for this project. The algorithm is as follows:
+
+First, candidate positions and velocities are obtained from the cloth dynamics. Then, an average velocity is calculated from this new position and the previous position. Each point on the cloth is checked for proximity, which in my project consists of point-triangle checks using a BVH that is fit to the cloth at the beginning of the collision algorithm. A repulsive force is applied to every close point that has negative relative velocity with respect to some triangle. The force is also applied to points on the triangle, interpolated using barycentric coordinates. If a point is still close to a triangle but has non-negative relative velocity, a spring-based force is also applied. This helps in situations where cloth is resting on top of some surface.
+
+After these forces are applied, a new candidate position is found using the new post-collision velocity. The previous and new positions are used in several iterations of continuous time collision detection as a final defense against interpenetrations. After a couple iterations of this, the paper switches to a different method of solving collisions, but I do not implement this method. After all repulsions have been applied, the candidate velocity has to be advanced to the final velocity.
+
+\section{Implementation}
+The implementation of this project follows the general layout of many of the previous projects we did in class. I have a cloth template class, a cloth instance class, and an obstacle class. A cloth instance contains a vector of positions and velocities. At every time step, these positions and velocities are updated according to the cloth’s dynamics. I have a method for each of the forces described in the Witkin paper: gravity, stretching, shearing, and bending. Each of these requires solving for the force as well as the differential with respect to position and velocity. All equations for doing this come straight from the Witkin paper and a supplementary document called Implementing Baraff \& Witkin’s Cloth Simulation by David Pritchard, which gives some derivations of the necessary differentials without the use of tensors, which would be necessary otherwise.
+
+I extend the collision detection code provided to us in the Seven Eves project to handle point-triangle proximity, and also adapt the BVH to hold triangles instead of tets. For the continuous time collision detection, I use code written by Tyson Brochu called Exact CCD. This code provides a black box for doing continuous time collision detection between point and triangles. For simplicity I do not handle edge-edge collisions. After collisions are collected, I have several loops that update candidate velocities in order to respond to each collision.
+
+After the velocities are updated, I solve for the final velocity based on the central time differencing equation as described in the paper.
+
+
+
+\end{document}

@@ -63,16 +63,7 @@ void GLPanel::paintGL()
     c_.applyProjection();
 
     Vector3d eye(0,0,0);
-    /*double scale = 1.0;
-    cont_->getCameraInfo(cameraView_, eye, scale);
 
-    eye *= scale;
-
-    double dz = exp(scale_);
-
-    eye[2] = dz;*/
-    //c_.setEye(eye);
-    //eye[2] -= 5.0;
     c_.setCenter(eye);
     eye[2] = scale_;
     Vector3d axis(-.1, rotLR, 0.);

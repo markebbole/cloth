@@ -10,6 +10,8 @@ make
 
 Camera controls:
 
+Press number keys 1, 2, and 3 to switch between different scenes.
+
 Dragging the mouse zooms in/out.
 The A and D keys rotate the camera view.
 
@@ -28,7 +30,4 @@ For now the test scene just has a single piece of cloth that is anchored at one 
 
 I have implemented stretching, shearing, bending, and damping as described in "Large Steps in Cloth Simulation" by Baraff (https://www.cs.cmu.edu/~baraff/papers/sig98.pdf).
 
-I have also implemented a repulsion impulse whenever point-triangle distance is small as described in the paper you suggested. There are two more collision impulses left to implement: First is a spring-based proximity impulse (in addition to the impulse I have already implemented) and the final impulse based on continuous time collision detection.
-
-I am mostly on track for this milestone, and in milestone two I will focus on the remaining collision impulses and perhaps try to add some interactive mouse-click forces and maybe tearing if time allows. Also I will see if I can add interactions between cloth and rigid bodies.
-
+Additionally, I have implemented self-collision handling as described in Robust Treatment of Collisions, Contact, and Friction for Cloth Animation by Bridson et. al. I did not implement friction. Additionally, the collision handling I do with rigid bodies is limited. First, the rigid bodies do not move. Second, I do not perform CTCD for any of the rigid bodies against the cloth. This means that with a sufficiently large time step (or even moderately sized time steps) the cloth can penetrate the rigid bodies. Additionally, with moderate time steps the cloth can sometimes blow up when coming into contact with rigid bodies. I think the main issue is that I'm not doing any strain limiting as suggested in the Bridson paper. If I had more time, I would implement this and see if it improved the stability. It seems as though most of the time the cloth-cloth collisions perform well. I also think I improved the speed of the simulation compared to the first milestone.

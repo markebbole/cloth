@@ -214,55 +214,6 @@ AABBNode *buildAABB(const ClothInstance * instance)
     return buildAABB(leaves);
 }
 
-// void pointObstacleTriangleProximity(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, int obstIndex, AABBNode* obstNode, std::set<Collision> &collisions) {
-//     Vector3i tri = obst->F.row(obstNode->childTriangle);
-//     Vector3d x1 = obst->V.row(tri[0]);
-//     Vector3d x2 = obst->V.row(tri[1]);
-//     Vector3d x3 = obst->V.row(tri[2]);
-
-//     Vector3d point = cloth->x.segment<3>(3*pIndex);
-
-//     Vector3d vec_43 = point - x3;
-//     Vector3d n_hat = (x3-x1).cross(x2-x1).normalized();
-
-//     if(n_hat.dot(point-x1) < 0) {
-//         n_hat = -n_hat;
-//     }
-
-//     Vector3d pointVelocity = cloth->v.segment<3>(3*pIndex);
-
-//     if(abs(vec_43.dot(n_hat)) < .1) {
-//         double m11 = (x1-x3).dot(x1-x3);
-//         double m21 = (x1-x3).dot(x2-x3);
-//         double m12 = (x1-x3).dot(x2-x3);
-//         double m22 = (x2-x3).dot(x2-x3);
-//         Matrix2d M;
-//         M << m11, m12, m21, m22;
-
-//         Vector2d A((x1-x3).dot(point-x3), (x2-x3).dot(point-x3));
-
-//         Vector2d w = M.inverse() * A;
-//         double w3 = 1. - w(0) - w(1);
-//         //.1 should be replaced with characteristic length of triangle. sqrt of area?
-//         double sqrtarea = .1*sqrt(abs((x2-x1).cross(x3-x1).norm())/2.);
-
-//         if(w(0) >= -sqrtarea && w(0) <= 1 + sqrtarea && w(1) >= -sqrtarea && w(1) <= 1 + sqrtarea && w3 >= -sqrtarea && w3 <= 1+sqrtarea) {
-
-//             double rel_velocity = n_hat.dot(pointVelocity);
-
-//             Collision c;
-//             c.pointIndex = pIndex;
-//             c.bary = Vector3d(w(0), w(1), w3);
-//             c.n_hat = n_hat;
-//             c.rel_velocity = rel_velocity;
-//             c.triIndex = obstNode->childTriangle;
-//             c.obstacleIndex = obstIndex;
-//             collisions.insert(c);
-            
-//         }
-//     }
-// }
-
 void pointTriangleProximity(ClothInstance* cloth, int triangleIndex, int pointIndex, Vector3d point, std::set<Collision> &collisions) {
     Vector3i tri = cloth->getTemplate().getFaces().row(triangleIndex);
     Vector3d x1 = cloth->x.segment<3>(3*tri[0]);
