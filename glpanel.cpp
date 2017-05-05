@@ -143,13 +143,10 @@ void GLPanel::keyPressEvent(QKeyEvent *ke)
     }
 
 
-    if (k >= 49 && k <= 52) {
+    if (k >= 49 && k <= 51) {
         cont_->setLevel((int)k-49);
     }
-    cout << "key: " << k << endl;
-    // int cam = ke->key()-'0';
-    // if(cam >= 0 && cam <= 9)
-    //     cameraView_ = cam;
+
 }
 
 void GLPanel::tick()

@@ -415,21 +415,6 @@ void selfCollisions(ClothInstance* cloth, std::set<Collision> &collisions) {
 }
 
 
-// void pointObstacleTest(ClothInstance* cloth, int pIndex, BBox& pointBox, Obstacle* obst, int obstIndex, AABBNode* obstNode, std::set<Collision>& collisions) {
-//     if(!obstNode)
-//         return;
-
-//     if(!intersects(pointBox, obstNode->box))
-//         return;
-
-//     if(obstNode->childTriangle != -1) {
-//         pointObstacleTriangleProximity(cloth, pIndex, pointBox, obst, obstIndex, obstNode, collisions);
-//     } else {
-//         pointObstacleTest(cloth, pIndex, pointBox, obst, obstIndex, obstNode->left, collisions);
-//         pointObstacleTest(cloth, pIndex, pointBox, obst, obstIndex, obstNode->right, collisions);
-//     }
-// }
-
 void obstacleCollisions(ClothInstance* cloth, std::vector< Obstacle *>& obstacles, std::set<Collision> &collisions) {
     collisions.clear();
 
@@ -475,7 +460,7 @@ Collision pointTriProx(Vector3d& p0, Vector3d& p1, Vector3d& p2, Vector3d& p3) {
 
         Vector2d w = M.inverse() * A;
         double w3 = 1. - w(0) - w(1);
-        //.1 should be replaced with characteristic length of triangle. sqrt of area?
+        
         double sqrtarea = .1*sqrt(abs((p2-p1).cross(p3-p1).norm())/2.);
 
         if(w(0) >= -sqrtarea && w(0) <= 1 + sqrtarea && w(1) >= -sqrtarea && w(1) <= 1 + sqrtarea && w3 >= -sqrtarea && w3 <= 1+sqrtarea) {
@@ -669,24 +654,6 @@ void triTriIntersectCT(ClothInstance* cloth, VectorXd& newX, VectorXd& newV, AAB
 
         }
 
-        // if(potentialColl2.isValid) {
-        //     potentialColl2.pointIndex = -1;
-
-        //     potentialColl2.triIndex = clothNode->childTriangle;
-        //     Vector3d v1 = cloth->v.segment<3>(3*clothTri[0]);
-        //     Vector3d v2 = cloth->v.segment<3>(3*clothTri[1]);
-        //     Vector3d v3 = cloth->v.segment<3>(3*clothTri[2]);
-
-
-        //     Vector3d triPointVel = potentialColl2.bary(0) * v1 
-        //         + potentialColl2.bary(1) * v2 + potentialColl2.bary(2) * v3;
-
-        //     potentialColl2.rel_velocity = -potentialColl2.n_hat.dot(triPointVel);
-        //     potentialColl2.obstaclePointIndex = objTri[i];
-        //     potentialColl2.obstacleIndex = otherObjectIndex;
-        //     collisions.insert(potentialColl2);
-
-        // }
     }
 }
 

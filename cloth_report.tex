@@ -60,7 +60,7 @@ For bending, $C(x) = \theta$, where $\theta$ is the angle between two adjacent t
 	
 From these conditions, the force on particle $i$ can be calculated as $f_i = -k \frac{\partial C(x)}{\partial x_i} C(x).$
 
-
+To assist in the derivations of force and differentials with respect to position and velocity, I used \textit{Implementing Baraff \& Witkin's Cloth Simulation} by David Pritchard, which outlines ways to differentiate the energies and forces in the system without the use of third-order tensors. 
 
 To handle collisions, I read the paper Robust Treatment of Collisions, Contact and Friction for Cloth Animation by Bridson et. al. The main idea in their paper is to combine different types of repulsive forces in order to handle cloth on cloth collisions robustly. Their method works with any cloth dynamics system, so it was a good fit for this project. The algorithm is as follows:
 
