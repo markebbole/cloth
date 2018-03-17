@@ -27,8 +27,3 @@ In order to update cloth parameters you have to clear the scene. (Stiffnesses an
 For now the test scene just has a single piece of cloth that is anchored at one of its corners.
 
 I have implemented stretching, shearing, bending, and damping as described in "Large Steps in Cloth Simulation" by Baraff (https://www.cs.cmu.edu/~baraff/papers/sig98.pdf).
-
-I have also implemented a repulsion impulse whenever point-triangle distance is small as described in the paper you suggested. There are two more collision impulses left to implement: First is a spring-based proximity impulse (in addition to the impulse I have already implemented) and the final impulse based on continuous time collision detection.
-
-I am mostly on track for this milestone, and in milestone two I will focus on the remaining collision impulses and perhaps try to add some interactive mouse-click forces and maybe tearing if time allows. Also I will see if I can add interactions between cloth and rigid bodies.
-
